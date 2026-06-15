@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Admin — Bogotá Bling</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif;background:#f8f8f8;color:#111;min-height:100vh}
+:root{--r:#C8102E;--rd:#9B0C23;--g:#C9A84C;--gd:#9E7B2F;--k:#111;--k2:#444;--k3:#888;--s1:#f8f8f8;--s2:#eee;--s3:#ddd;--radius:10px;--sh:0 2px 12px rgba(0,0,0,.08)}
+
+/* ─ TOP BAR ─ */
+.topbar{background:linear-gradient(135deg,var(--rd),var(--r));padding:0 28px;height:60px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 16px rgba(200,16,46,.25)}
+.topbar-logo{display:flex;align-items:center;gap:10px;color:#fff}
+.topbar-logo-text{font-size:1rem;font-weight:900;letter-spacing:-.01em}
+.topbar-logo-sub{font-size:.62rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;opacity:.75}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.topbar-link{color:rgba(255,255,255,.8);font-size:.8rem;font-weight:600;padding:7px 14px;border-radius:6px;border:1px solid rgba(255,255,255,.25);transition:all .2s}
+.topbar-link:hover{background:rgba(255,255,255,.15);color:#fff}
+.topbar-tag{background:rgba(255,255,255,.15);color:#fff;font-size:.68rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;padding:4px 10px;border-radius:20px;border:1px solid rgba(255,255,255,.2)}
+
+/* ─ LAYOUT ─ */
+.layout{display:grid;grid-template-columns:240px 1fr;min-height:calc(100vh - 60px)}
+.sidebar{background:#fff;border-right:1px solid var(--s2);padding:20px 0}
+.sidebar-section{margin-bottom:6px}
+.sidebar-label{font-size:.6rem;font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:var(--k3);padding:14px 20px 6px}
+.sidebar-item{display:flex;align-items:center;gap:10px;padding:10px 20px;font-size:.84rem;font-weight:600;color:var(--k2);cursor:pointer;border-left:3px solid transparent;transition:all .2s}
+.sidebar-item:hover{background:var(--s1);color:var(--r)}
+.sidebar-item.active{background:rgba(200,16,46,.06);color:var(--r);border-left-color:var(--r)}
+.sidebar-item .icon{width:20px;text-align:center;font-size:.95rem}
+.sidebar-item .badge{margin-left:auto;background:var(--s2);color:var(--k3);font-size:.65rem;font-weight:800;padding:2px 7px;border-radius:10px}
+.sidebar-item.active .badge{background:rgba(200,16,46,.12);color:var(--r)}
+.main{padding:32px 36px;overflow-y:auto}
+
+/* ─ PANELS ─ */
+.panel{display:none}
+.panel.active{display:block}
+.panel-head{margin-bottom:28px}
+.panel-title{font-size:1.4rem;font-weight:900;color:var(--k);letter-spacing:-.02em;margin-bottom:4px}
+.panel-sub{font-size:.85rem;color:var(--k3)}
+
+/* ─ STATS ─ */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px}
+.stat-card{background:#fff;border:1px solid var(--s2);border-radius:var(--radius);padding:20px 18px;box-shadow:var(--sh)}
+.stat-n{font-size:2rem;font-weight:900;color:var(--r);line-height:1}
+.stat-l{font-size:.75rem;color:var(--k3);margin-top:4px;font-weight:600;letter-spacing:.04em}
+.stat-card.gold .stat-n{color:var(--gd)}
+
+/* ─ BUTTONS ─ */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:7px;font-size:.82rem;font-weight:700;cursor:pointer;border:none;transition:all .22s;letter-spacing:.02em}
+.btn-r{background:linear-gradient(135deg,var(--rd),var(--r));color:#fff;box-shadow:0 2px 10px rgba(200,16,46,.3)}
+.btn-r:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(200,16,46,.4)}
+.btn-ghost{background:transparent;color:var(--k2);border:1.5px solid var(--s3)}
+.btn-ghost:hover{border-color:var(--r);color:var(--r)}
+.btn-danger{background:transparent;color:#dc2626;border:1.5px solid #fca5a5}
+.btn-danger:hover{background:#dc2626;color:#fff;border-color:#dc2626}
+.btn-sm{padding:6px 12px;font-size:.74rem}
+.btn-lg{padding:12px 24px;font-size:.9rem}
+
+/* ─ UPLOAD AREA ─ */
+.upload-section{background:#fff;border:1px solid var(--s2);border-radius:var(--radius);padding:28px;box-shadow:var(--sh);margin-bottom:20px}
+.upload-title{font-size:1rem;font-weight:800;color:var(--k);margin-bottom:6px}
+.upload-sub{font-size:.82rem;color:var(--k3);margin-bottom:20px}
+.upload-options{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+.upload-opt{border:2px dashed var(--s3);border-radius:var(--radius);padding:28px 20px;text-align:center;cursor:pointer;transition:all .22s;position:relative}
+.upload-opt:hover,.upload-opt.drag{border-color:var(--r);background:rgba(200,16,46,.03)}
+.upload-opt input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upload-opt-icon{font-size:2rem;margin-bottom:10px;line-height:1}
+.upload-opt-title{font-size:.9rem;font-weight:800;color:var(--k);margin-bottom:4px}
+.upload-opt-sub{font-size:.76rem;color:var(--k3);line-height:1.5}
+.upload-meta{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-label{font-size:.76rem;font-weight:700;color:var(--k2)}
+.form-control{padding:9px 12px;border:1.5px solid var(--s3);border-radius:7px;font-size:.84rem;color:var(--k);transition:border .2s;background:#fff}
+.form-control:focus{outline:none;border-color:var(--r)}
+.form-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:30px}
+.form-checks{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.form-check{display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.84rem;font-weight:600;color:var(--k2)}
+.form-check input{accent-color:var(--r);width:15px;height:15px}
+
+/* ─ PREVIEW GRID ─ */
+.preview-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.preview-count{font-size:.8rem;color:var(--k3);font-weight:600}
+.preview-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.preview-card{position:relative;border-radius:8px;overflow:hidden;aspect-ratio:3/4;background:var(--s1);border:1.5px solid var(--s2);group:true}
+.preview-card img{width:100%;height:100%;object-fit:cover;display:block}
+.preview-card-info{position:absolute;bottom:0;left:0;right:0;padding:6px 8px;background:linear-gradient(transparent,rgba(0,0,0,.75));color:#fff}
+.preview-card-name{font-size:.65rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.preview-card-del{position:absolute;top:5px;right:5px;width:24px;height:24px;border-radius:50%;background:rgba(220,38,38,.9);border:none;color:#fff;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;opacity:0}
+.preview-card:hover .preview-card-del{opacity:1}
+.upload-actions{display:flex;gap:10px;padding-top:16px;border-top:1px solid var(--s2);margin-top:16px}
+.progress-bar{height:4px;background:var(--s2);border-radius:2px;overflow:hidden;margin-bottom:12px;display:none}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--rd),var(--r));border-radius:2px;transition:width .3s;width:0}
+
+/* ─ PRODUCT TABLE ─ */
+.table-toolbar{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+.search-box{flex:1;min-width:200px;position:relative}
+.search-box input{width:100%;padding:8px 12px 8px 34px;border:1.5px solid var(--s3);border-radius:7px;font-size:.84rem}
+.search-box input:focus{outline:none;border-color:var(--r)}
+.search-box::before{content:'🔍';position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:.8rem}
+.filter-select{padding:8px 12px;border:1.5px solid var(--s3);border-radius:7px;font-size:.82rem;color:var(--k);background:#fff}
+.filter-select:focus{outline:none;border-color:var(--r)}
+.prod-table{width:100%;background:#fff;border:1px solid var(--s2);border-radius:var(--radius);overflow:hidden;box-shadow:var(--sh)}
+.prod-table table{width:100%;border-collapse:collapse}
+.prod-table th{background:var(--s1);font-size:.72rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--k3);padding:12px 14px;text-align:left;border-bottom:1px solid var(--s2)}
+.prod-table td{padding:10px 14px;border-bottom:1px solid var(--s2);font-size:.83rem;color:var(--k2);vertical-align:middle}
+.prod-table tr:last-child td{border-bottom:none}
+.prod-table tr:hover td{background:var(--s1)}
+.prod-thumb{width:42px;height:56px;object-fit:cover;border-radius:5px;border:1px solid var(--s2)}
+.prod-name-cell{font-weight:700;color:var(--k)}
+.badge{display:inline-block;font-size:.65rem;font-weight:800;letter-spacing:.05em;padding:3px 8px;border-radius:10px}
+.badge-green{background:#dcfce7;color:#16a34a}
+.badge-red{background:#fee2e2;color:#dc2626}
+.badge-blue{background:#dbeafe;color:#2563eb}
+.badge-gold{background:rgba(201,168,76,.15);color:var(--gd)}
+.badge-grey{background:var(--s2);color:var(--k3)}
+.row-actions{display:flex;gap:6px;align-items:center}
+
+/* ─ EDIT MODAL ─ */
+.edit-modal{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .25s}
+.edit-modal.open{opacity:1;pointer-events:all}
+.edit-box{background:#fff;border-radius:16px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.25);animation:mIn .28s cubic-bezier(.34,1.3,.64,1)}
+@keyframes mIn{from{transform:scale(.92) translateY(16px);opacity:0}to{transform:none;opacity:1}}
+.edit-box-head{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--s2)}
+.edit-box-title{font-size:1rem;font-weight:900;color:var(--k)}
+.edit-close{width:32px;height:32px;border-radius:50%;background:var(--s1);border:1px solid var(--s2);color:var(--k);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .2s}
+.edit-close:hover{background:var(--r);border-color:var(--r);color:#fff}
+.edit-body{padding:24px}
+.edit-img-preview{width:100%;height:180px;object-fit:cover;border-radius:8px;margin-bottom:16px;background:var(--s1);display:block}
+.edit-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.span2{grid-column:1/-1}
+.edit-foot{padding:16px 24px;border-top:1px solid var(--s2);display:flex;justify-content:flex-end;gap:10px}
+
+/* ─ EMPTY & TOAST ─ */
+.empty{text-align:center;padding:48px 24px;color:var(--k3)}
+.empty-icon{font-size:2.5rem;margin-bottom:12px}
+.empty p{font-size:.88rem}
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:12px 22px;border-radius:8px;font-size:.84rem;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:9999;opacity:0;transition:opacity .28s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+.toast.ok::before{content:'✅ '}
+.toast.err::before{content:'❌ '}
+
+/* ─ RESPONSIVE ─ */
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .main{padding:20px}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .upload-options{grid-template-columns:1fr}
+  .upload-meta{grid-template-columns:1fr}
+  .edit-form-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-logo">
+    <div>
+      <div class="topbar-logo-text">Bogotá Bling</div>
+      <div class="topbar-logo-sub">Panel Admin</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <span class="topbar-tag">🔒 Admin</span>
+    <a href="/" class="topbar-link">← Ver tienda</a>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Principal</div>
+      <div class="sidebar-item active" onclick="showPanel('dashboard')">
+        <span class="icon">📊</span> Dashboard
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Catálogo</div>
+      <div class="sidebar-item" onclick="showPanel('upload')">
+        <span class="icon">📤</span> Subir imágenes
+      </div>
+      <div class="sidebar-item" onclick="showPanel('products')">
+        <span class="icon">📦</span> Productos <span class="badge" id="sb-count">53</span>
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Categorías</div>
+      <div class="sidebar-item" onclick="filterCat('relojes-hombre');showPanel('products')"><span class="icon">⌚</span> Hombre</div>
+      <div class="sidebar-item" onclick="filterCat('relojes-dama');showPanel('products')"><span class="icon">⌚</span> Dama</div>
+      <div class="sidebar-item" onclick="filterCat('anillos-oro-rosa');showPanel('products')"><span class="icon">🌹</span> Anillos Rosa</div>
+      <div class="sidebar-item" onclick="filterCat('anillos-oro-18k');showPanel('products')"><span class="icon">💛</span> Anillos Oro</div>
+      <div class="sidebar-item" onclick="filterCat('pulseras');showPanel('products')"><span class="icon">📿</span> Pulseras</div>
+      <div class="sidebar-item" onclick="filterCat('cadenas');showPanel('products')"><span class="icon">⛓</span> Cadenas</div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- DASHBOARD -->
+    <div class="panel active" id="panel-dashboard">
+      <div class="panel-head">
+        <h1 class="panel-title">Dashboard</h1>
+        <p class="panel-sub">Bienvenido al panel de administración de Bogotá Bling.</p>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-n" id="d-total">53</div><div class="stat-l">Productos totales</div></div>
+        <div class="stat-card"><div class="stat-n" id="d-dest">—</div><div class="stat-l">Destacados</div></div>
+        <div class="stat-card"><div class="stat-n" id="d-new">—</div><div class="stat-l">Novedades</div></div>
+        <div class="stat-card gold"><div class="stat-n" id="d-cats">6</div><div class="stat-l">Categorías</div></div>
+      </div>
+      <div style="background:#fff;border:1px solid #eee;border-radius:10px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,.06)">
+        <h3 style="font-size:.95rem;font-weight:800;margin-bottom:14px;color:#111">Acciones rápidas</h3>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-r" onclick="showPanel('upload')">📤 Subir imágenes</button>
+          <button class="btn btn-ghost" onclick="showPanel('products')">📦 Ver productos</button>
+          <a href="/" target="_blank" class="btn btn-ghost">🌐 Ver tienda</a>
+        </div>
+      </div>
+      <div style="margin-top:20px;background:#fff;border:1px solid #eee;border-radius:10px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,.06)">
+        <h3 style="font-size:.95rem;font-weight:800;margin-bottom:10px;color:#111">ℹ️ Cómo publicar cambios en Netlify</h3>
+        <p style="font-size:.83rem;color:#666;line-height:1.7">Los cambios realizados aquí se guardan localmente en memoria. Para publicarlos en el sitio web permanentemente, debes subir los archivos actualizados a tu repositorio de GitHub y hacer deploy en Netlify. Si usas Decap CMS con Git Gateway, los cambios se guardan automáticamente.</p>
+      </div>
+    </div>
+
+    <!-- UPLOAD -->
+    <div class="panel" id="panel-upload">
+      <div class="panel-head">
+        <h1 class="panel-title">📤 Subir imágenes</h1>
+        <p class="panel-sub">Sube una imagen, varias a la vez, o una carpeta completa con todas las fotos.</p>
+      </div>
+
+      <div class="upload-section">
+        <div class="upload-title">Seleccionar archivos o carpeta</div>
+        <div class="upload-sub">Puedes arrastrar archivos aquí, seleccionar imágenes individuales, o subir una carpeta entera de golpe.</div>
+
+        <div class="upload-options">
+          <div class="upload-opt" id="dropFiles">
+            <input type="file" id="inputFiles" accept="image/*" multiple/>
+            <div class="upload-opt-icon">🖼️</div>
+            <div class="upload-opt-title">Seleccionar imágenes</div>
+            <div class="upload-opt-sub">Elige una o varias fotos a la vez desde tu galería o computador</div>
+          </div>
+          <div class="upload-opt" id="dropFolder">
+            <input type="file" id="inputFolder" accept="image/*" webkitdirectory multiple/>
+            <div class="upload-opt-icon">📁</div>
+            <div class="upload-opt-title">Subir carpeta completa</div>
+            <div class="upload-opt-sub">Selecciona una carpeta y sube todas las imágenes que contiene de una vez</div>
+          </div>
+        </div>
+
+        <div class="upload-meta">
+          <div class="form-group">
+            <label class="form-label">Categoría destino</label>
+            <select class="form-control form-select" id="upCat">
+              <option value="relojes-hombre">⌚ Relojes para Hombre</option>
+              <option value="relojes-dama">⌚ Relojes para Dama</option>
+              <option value="anillos-oro-rosa">🌹 Anillos Oro Rosa</option>
+              <option value="anillos-oro-18k">💛 Anillos Oro 18k</option>
+              <option value="pulseras">📿 Pulseras</option>
+              <option value="cadenas">⛓ Cadenas</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Precio (aplica a todos)</label>
+            <input class="form-control" id="upPrecio" type="text" placeholder="Ej: $350.000 o Consultar" value="Consultar"/>
+          </div>
+        </div>
+
+        <div class="form-checks">
+          <label class="form-check"><input type="checkbox" id="upDestacado"/> Marcar como Destacados</label>
+          <label class="form-check"><input type="checkbox" id="upNovedad" checked/> Marcar como Novedades</label>
+          <label class="form-check"><input type="checkbox" id="upDisponible" checked/> Disponible</label>
+        </div>
+
+        <div class="progress-bar" id="progressBar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <div id="previewSection" style="display:none">
+          <div class="preview-header">
+            <span class="preview-count" id="previewCount">0 imágenes seleccionadas</span>
+            <button class="btn btn-ghost btn-sm" onclick="clearPreview()">🗑 Limpiar</button>
+          </div>
+          <div class="preview-grid" id="previewGrid"></div>
+          <div class="upload-actions">
+            <button class="btn btn-r btn-lg" id="btnSave" onclick="saveImages()">
+              💾 Agregar al catálogo (<span id="saveCount">0</span>)
+            </button>
+            <button class="btn btn-ghost" onclick="clearPreview()">Cancelar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Drop zone overlay -->
+      <div style="background:#fff;border:1px solid #eee;border-radius:10px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,.06)">
+        <h3 style="font-size:.9rem;font-weight:800;margin-bottom:8px">💡 Consejos</h3>
+        <ul style="font-size:.82rem;color:#666;line-height:1.9;padding-left:16px">
+          <li>Puedes subir <strong>100+ imágenes</strong> de una vez seleccionando una carpeta</li>
+          <li>Formatos soportados: JPG, PNG, WEBP, HEIC</li>
+          <li>Las imágenes se comprimen automáticamente para mejor rendimiento</li>
+          <li>Puedes editar el nombre de cada producto después en la sección Productos</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- PRODUCTS -->
+    <div class="panel" id="panel-products">
+      <div class="panel-head">
+        <h1 class="panel-title">📦 Productos</h1>
+        <p class="panel-sub">Gestiona todos los productos del catálogo.</p>
+      </div>
+      <div class="table-toolbar">
+        <div class="search-box">
+          <input type="text" id="searchInput" placeholder="Buscar producto…" oninput="filterTable()"/>
+        </div>
+        <select class="filter-select" id="catFilter" onchange="filterTable()">
+          <option value="">Todas las categorías</option>
+          <option value="relojes-hombre">⌚ Hombre</option>
+          <option value="relojes-dama">⌚ Dama</option>
+          <option value="anillos-oro-rosa">🌹 Anillos Rosa</option>
+          <option value="anillos-oro-18k">💛 Anillos Oro</option>
+          <option value="pulseras">📿 Pulseras</option>
+          <option value="cadenas">⛓ Cadenas</option>
+        </select>
+        <select class="filter-select" id="statusFilter" onchange="filterTable()">
+          <option value="">Todos</option>
+          <option value="destacado">⭐ Destacados</option>
+          <option value="novedad">🆕 Novedades</option>
+          <option value="disponible">✅ Disponibles</option>
+        </select>
+        <button class="btn btn-r btn-sm" onclick="showPanel('upload')">+ Agregar</button>
+      </div>
+      <div class="prod-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Imagen</th>
+              <th>Nombre</th>
+              <th>Categoría</th>
+              <th>Precio</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="prodTbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="edit-modal" id="editModal">
+  <div class="edit-box">
+    <div class="edit-box-head">
+      <h2 class="edit-box-title" id="editTitle">Editar producto</h2>
+      <button class="edit-close" onclick="closeEdit()">✕</button>
+    </div>
+    <div class="edit-body">
+      <img class="edit-img-preview" id="editImgPreview" src="" alt=""/>
+      <div class="form-group span2" style="margin-bottom:12px">
+        <label class="form-label">Nueva imagen (opcional)</label>
+        <input type="file" id="editImgFile" accept="image/*" class="form-control" onchange="previewEditImg(this)"/>
+      </div>
+      <div class="edit-form-grid">
+        <div class="form-group span2">
+          <label class="form-label">Nombre del producto</label>
+          <input class="form-control" id="editNombre" type="text"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Categoría</label>
+          <select class="form-control form-select" id="editCat">
+            <option value="relojes-hombre">⌚ Relojes Hombre</option>
+            <option value="relojes-dama">⌚ Relojes Dama</option>
+            <option value="anillos-oro-rosa">🌹 Anillos Oro Rosa</option>
+            <option value="anillos-oro-18k">💛 Anillos Oro 18k</option>
+            <option value="pulseras">📿 Pulseras</option>
+            <option value="cadenas">⛓ Cadenas</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Precio</label>
+          <input class="form-control" id="editPrecio" type="text" placeholder="Ej: $350.000"/>
+        </div>
+        <div class="form-group span2">
+          <label class="form-label">Descripción</label>
+          <textarea class="form-control" id="editDesc" rows="3" style="resize:vertical"></textarea>
+        </div>
+      </div>
+      <div class="form-checks">
+        <label class="form-check"><input type="checkbox" id="editDestacado"/> Destacado</label>
+        <label class="form-check"><input type="checkbox" id="editNovedad"/> Novedad</label>
+        <label class="form-check"><input type="checkbox" id="editDisponible"/> Disponible</label>
+      </div>
+    </div>
+    <div class="edit-foot">
+      <button class="btn btn-ghost" onclick="closeEdit()">Cancelar</button>
+      <button class="btn btn-r" onclick="saveEdit()">💾 Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── DATA (demo products for admin) ───
+let PRODS = [
+  {s:'submariner-gold',    n:'Submariner Dorado',          c:'relojes-hombre', p:'Consultar',d:'Reloj Submariner chapado en oro.',ft:true, nv:false,dis:true,i:''},
+  {s:'santos-iced-silver', n:'Santos Iced Silver',         c:'relojes-hombre', p:'Consultar',d:'Santos con acabado iced out plateado.',ft:true, nv:false,dis:true,i:''},
+  {s:'datejust-rainbow',   n:'Datejust Rainbow',           c:'relojes-hombre', p:'Consultar',d:'Datejust con bisel arcoíris.',ft:true, nv:true, dis:true,i:''},
+  {s:'hublot-big-bang',    n:'Hublot Big Bang Negro',      c:'relojes-hombre', p:'Consultar',d:'Big Bang iced out negro.',ft:true, nv:false,dis:true,i:''},
+  {s:'nautilus-diamonds',  n:'Nautilus Full Diamonds',     c:'relojes-hombre', p:'Consultar',d:'Nautilus cubierto en diamantes.',ft:true, nv:false,dis:true,i:''},
+  {s:'gmt-pepsi',          n:'GMT-Master Pepsi',           c:'relojes-hombre', p:'Consultar',d:'GMT-Master bisel rojo-azul.',ft:true, nv:false,dis:true,i:''},
+  {s:'daytona-oro',        n:'Daytona Cronógrafo Oro',     c:'relojes-hombre', p:'Consultar',d:'Daytona dorado cronógrafo.',ft:true, nv:false,dis:true,i:''},
+  {s:'santos-dama-silver', n:'Santos Dama Plateado',       c:'relojes-dama',   p:'Consultar',d:'Santos dama iced out.',ft:true, nv:false,dis:true,i:''},
+  {s:'lady-datejust-iced', n:'Lady-Datejust Iced',         c:'relojes-dama',   p:'Consultar',d:'Lady-Datejust en diamantes.',ft:true, nv:true, dis:true,i:''},
+  {s:'santos-dama-rose',   n:'Santos Dama Rose Gold',      c:'relojes-dama',   p:'Consultar',d:'Santos dama oro rosa.',ft:true, nv:false,dis:true,i:''},
+  {s:'iced-dama-rainbow',  n:'Iced Out Dama Multicolor',   c:'relojes-dama',   p:'Consultar',d:'Reloj dama iced rainbow.',ft:true, nv:true, dis:true,i:''},
+  {s:'anillo-rosa-dia',    n:'Anillo Oro Rosa Diamantes',  c:'anillos-oro-rosa',p:'Consultar',d:'Anillo oro rosa 18k.',ft:true, nv:false,dis:true,i:''},
+  {s:'anillo-rosa-eternal',n:'Anillo Rosa Eternal',        c:'anillos-oro-rosa',p:'Consultar',d:'Anillo eternal oro rosa.',ft:true, nv:false,dis:true,i:''},
+  {s:'anillo-oro-clasico', n:'Anillo Oro 18k Clásico',     c:'anillos-oro-18k', p:'Consultar',d:'Anillo clásico oro 18k.',ft:true, nv:false,dis:true,i:''},
+  {s:'anillo-oro-solitario',n:'Anillo Oro 18k Solitario',  c:'anillos-oro-18k', p:'Consultar',d:'Solitario oro 18k.',ft:true, nv:true, dis:true,i:''},
+  {s:'pulsera-dorada',     n:'Pulsera Caballero Dorada',   c:'pulseras',        p:'Consultar',d:'Pulsera eslabón cubano dorada.',ft:true, nv:false,dis:true,i:''},
+  {s:'pulsera-iced',       n:'Pulsera Iced Out Silver',    c:'pulseras',        p:'Consultar',d:'Pulsera iced out plateada.',ft:true, nv:true, dis:true,i:''},
+  {s:'cadena-cubana',      n:'Cadena Cubana Dorada 6mm',   c:'cadenas',         p:'Consultar',d:'Cadena cubana 6mm dorada.',ft:true, nv:false,dis:true,i:''},
+  {s:'cadena-miami',       n:'Cadena Miami Cuban Link',    c:'cadenas',         p:'Consultar',d:'Cadena Miami Cuban Link 10mm.',ft:true, nv:false,dis:true,i:''},
+  {s:'cadena-iced',        n:'Cadena Iced Out Dorada',     c:'cadenas',         p:'Consultar',d:'Cadena iced out dorada.',ft:true, nv:true, dis:true,i:''},
+];
+
+const CAT_L = {'relojes-hombre':'⌚ Hombre','relojes-dama':'⌚ Dama','anillos-oro-rosa':'🌹 Anillos Rosa','anillos-oro-18k':'💛 Anillos Oro','pulseras':'📿 Pulseras','cadenas':'⛓ Cadenas'};
+let pendingFiles = [];
+let editIdx = -1;
+let currentCatFilter = '';
+
+// ─── PANEL NAV ───
+function showPanel(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  if (id === 'products') { renderTable(); updateStats(); }
+  if (id === 'dashboard') updateStats();
+}
+
+// ─── STATS ───
+function updateStats() {
+  const dest = PRODS.filter(p => p.ft).length;
+  const nv   = PRODS.filter(p => p.nv).length;
+  document.getElementById('d-total').textContent = PRODS.length;
+  document.getElementById('d-dest').textContent  = dest;
+  document.getElementById('d-new').textContent   = nv;
+  document.getElementById('sb-count').textContent = PRODS.length;
+}
+updateStats();
+
+// ─── FILTER CAT FROM SIDEBAR ───
+function filterCat(cat) {
+  currentCatFilter = cat;
+  document.getElementById('catFilter').value = cat;
+}
+
+// ─── FILE INPUT ───
+function readFiles(files) {
+  const allowed = ['image/jpeg','image/png','image/webp','image/heic','image/gif'];
+  const imgs = Array.from(files).filter(f => allowed.includes(f.type) || f.name.match(/\.(jpg|jpeg|png|webp|heic)$/i));
+  if (!imgs.length) { toast('No se encontraron imágenes válidas', 'err'); return; }
+  let loaded = 0;
+  const bar = document.getElementById('progressBar');
+  const fill = document.getElementById('progressFill');
+  bar.style.display = 'block'; fill.style.width = '0%';
+  imgs.forEach((file, idx) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      pendingFiles.push({ img: e.target.result, nombre: file.name.replace(/\.[^.]+$/, '').replace(/[_-]/g, ' '), size: file.size });
+      loaded++;
+      fill.style.width = (loaded/imgs.length*100) + '%';
+      if (loaded === imgs.length) {
+        bar.style.display = 'none';
+        renderPreview();
+        toast(`${imgs.length} imagen${imgs.length>1?'es':''} cargada${imgs.length>1?'s':''}`, 'ok');
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+document.getElementById('inputFiles').addEventListener('change', e => readFiles(e.target.files));
+document.getElementById('inputFolder').addEventListener('change', e => readFiles(e.target.files));
+
+// Drag & drop on both zones
+['dropFiles','dropFolder'].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener('dragover', e => { e.preventDefault(); el.classList.add('drag'); });
+  el.addEventListener('dragleave', () => el.classList.remove('drag'));
+  el.addEventListener('drop', e => {
+    e.preventDefault(); el.classList.remove('drag');
+    const files = e.dataTransfer.files.length ? e.dataTransfer.files
+                : (e.dataTransfer.items ? [...e.dataTransfer.items].filter(i=>i.kind==='file').map(i=>i.getAsFile()) : []);
+    readFiles(files);
+  });
+});
+
+// ─── PREVIEW ───
+function renderPreview() {
+  const sec = document.getElementById('previewSection');
+  const grid = document.getElementById('previewGrid');
+  const count = document.getElementById('previewCount');
+  const saveCount = document.getElementById('saveCount');
+  if (!pendingFiles.length) { sec.style.display = 'none'; return; }
+  sec.style.display = 'block';
+  count.textContent = `${pendingFiles.length} imagen${pendingFiles.length>1?'es':''} seleccionada${pendingFiles.length>1?'s':''}`;
+  saveCount.textContent = pendingFiles.length;
+  grid.innerHTML = pendingFiles.map((f,i) => `
+    <div class="preview-card">
+      <img src="${f.img}" alt="${f.nombre}" loading="lazy"/>
+      <div class="preview-card-info"><div class="preview-card-name">${f.nombre}</div></div>
+      <button class="preview-card-del" onclick="removePending(${i})">✕</button>
+    </div>`).join('');
+}
+
+function removePending(i) { pendingFiles.splice(i,1); renderPreview(); }
+function clearPreview() { pendingFiles = []; renderPreview(); }
+
+// ─── SAVE IMAGES ───
+function saveImages() {
+  if (!pendingFiles.length) return;
+  const cat     = document.getElementById('upCat').value;
+  const precio  = document.getElementById('upPrecio').value || 'Consultar';
+  const dest    = document.getElementById('upDestacado').checked;
+  const nv      = document.getElementById('upNovedad').checked;
+  const dis     = document.getElementById('upDisponible').checked;
+  const catDesc = { 'relojes-hombre':'Reloj para hombre', 'relojes-dama':'Reloj para dama', 'anillos-oro-rosa':'Anillo oro rosa 18k', 'anillos-oro-18k':'Anillo oro 18k', pulseras:'Pulsera premium', cadenas:'Cadena de lujo' };
+  pendingFiles.forEach((f,i) => {
+    PRODS.push({ s:'prod-'+Date.now()+'-'+i, n:f.nombre, c:cat, p:precio, d:catDesc[cat]||'Producto Bogotá Bling', ft:dest, nv:nv, dis:dis, i:f.img });
+  });
+  toast(`✅ ${pendingFiles.length} producto${pendingFiles.length>1?'s':''} agregado${pendingFiles.length>1?'s':''}`, 'ok');
+  clearPreview();
+  updateStats();
+}
+
+// ─── PRODUCTS TABLE ───
+function renderTable() {
+  const q    = (document.getElementById('searchInput').value||'').toLowerCase();
+  const cat  = document.getElementById('catFilter').value || currentCatFilter;
+  const stat = document.getElementById('statusFilter').value;
+  let list = PRODS.filter(p => {
+    if (q && !p.n.toLowerCase().includes(q)) return false;
+    if (cat && p.c !== cat) return false;
+    if (stat === 'destacado' && !p.ft) return false;
+    if (stat === 'novedad'   && !p.nv) return false;
+    if (stat === 'disponible'&& !p.dis)return false;
+    return true;
+  });
+  const tbody = document.getElementById('prodTbody');
+  if (!list.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:#999">No hay productos que coincidan.</td></tr>'; return; }
+  tbody.innerHTML = list.map((p,i) => {
+    const idx = PRODS.indexOf(p);
+    const badges = [
+      p.ft  ? '<span class="badge badge-gold">⭐ Dest.</span>' : '',
+      p.nv  ? '<span class="badge badge-blue">🆕 Nuevo</span>' : '',
+      p.dis ? '<span class="badge badge-green">✓ Activo</span>' : '<span class="badge badge-red">✗ Inactivo</span>',
+    ].filter(Boolean).join(' ');
+    const thumb = p.i ? `<img class="prod-thumb" src="${p.i}" alt=""/>` : `<div style="width:42px;height:56px;background:#f5f5f5;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:1.2rem">📦</div>`;
+    return `<tr>
+      <td>${thumb}</td>
+      <td class="prod-name-cell">${p.n}</td>
+      <td><span class="badge badge-grey">${CAT_L[p.c]||p.c}</span></td>
+      <td style="font-weight:700;color:var(--r)">${p.p}</td>
+      <td>${badges}</td>
+      <td><div class="row-actions">
+        <button class="btn btn-ghost btn-sm" onclick="openEdit(${idx})">✏️ Editar</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteProd(${idx})">🗑</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+function filterTable() { renderTable(); }
+
+// ─── EDIT ───
+function openEdit(idx) {
+  editIdx = idx;
+  const p = PRODS[idx];
+  document.getElementById('editTitle').textContent = 'Editar: ' + p.n;
+  document.getElementById('editImgPreview').src = p.i || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="%23f5f5f5"/><text x="50" y="55" text-anchor="middle" fill="%23ccc" font-size="32">📷</text></svg>';
+  document.getElementById('editNombre').value  = p.n;
+  document.getElementById('editCat').value     = p.c;
+  document.getElementById('editPrecio').value  = p.p;
+  document.getElementById('editDesc').value    = p.d;
+  document.getElementById('editDestacado').checked = p.ft;
+  document.getElementById('editNovedad').checked   = p.nv;
+  document.getElementById('editDisponible').checked= p.dis;
+  document.getElementById('editImgFile').value = '';
+  document.getElementById('editModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function previewEditImg(input) {
+  if (!input.files[0]) return;
+  const r = new FileReader();
+  r.onload = e => { document.getElementById('editImgPreview').src = e.target.result; };
+  r.readAsDataURL(input.files[0]);
+}
+
+function saveEdit() {
+  const p = PRODS[editIdx];
+  p.n   = document.getElementById('editNombre').value;
+  p.c   = document.getElementById('editCat').value;
+  p.p   = document.getElementById('editPrecio').value;
+  p.d   = document.getElementById('editDesc').value;
+  p.ft  = document.getElementById('editDestacado').checked;
+  p.nv  = document.getElementById('editNovedad').checked;
+  p.dis = document.getElementById('editDisponible').checked;
+  const imgFile = document.getElementById('editImgFile').files[0];
+  if (imgFile) {
+    const r = new FileReader();
+    r.onload = e => { p.i = e.target.result; closeEdit(); renderTable(); toast('Producto actualizado','ok'); };
+    r.readAsDataURL(imgFile);
+  } else {
+    closeEdit(); renderTable(); toast('Producto actualizado','ok');
+  }
+}
+
+function closeEdit() { document.getElementById('editModal').classList.remove('open'); document.body.style.overflow = ''; }
+document.getElementById('editModal').addEventListener('click', function(e) { if(e.target===this) closeEdit(); });
+
+// ─── DELETE ───
+function deleteProd(idx) {
+  if (!confirm('¿Eliminar "' + PRODS[idx].n + '"? Esta acción no se puede deshacer.')) return;
+  PRODS.splice(idx, 1);
+  renderTable(); updateStats();
+  toast('Producto eliminado', 'ok');
+}
+
+// ─── TOAST ───
+function toast(msg, type='ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.className = 'toast', 2800);
+}
+</script>
+</body>
+</html>
