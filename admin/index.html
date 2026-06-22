@@ -28,11 +28,18 @@
     <p>Cargando panel de administración…</p>
   </div>
   
-  <!-- 1. Cargamos Decap CMS -->
-  <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
+  <script src="https://unpkg.com@^3.0.0/dist/decap-cms.js"></script>
 
-  
   <script>
+    // CORRECCIÓN: Ocultar el loading cuando el CMS esté listo en segundo plano
+    CMS.registerEventListener({
+      name: 'ready',
+      handler: () => {
+        const loading = document.getElementById('loading');
+        if (loading) loading.style.display = 'none';
+      },
+    });
+
     if (window.netlifyIdentity) {
       window.netlifyIdentity.on("init", user => {
         if (!user) {
