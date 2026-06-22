@@ -2,9 +2,9 @@ backend:
   name: git-gateway
   branch: main
 
-# Rutas universales corregidas para evitar imágenes rotas
-media_folder: "./public/images/products"
-public_folder: "/images/products"
+# Configuración limpia y directa para evitar la pantalla gris de error
+media_folder: "images/products"
+public_folder: "images/products"
 
 locale: es
 
