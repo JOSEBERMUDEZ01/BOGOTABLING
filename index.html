@@ -628,8 +628,12 @@ document.querySelectorAll('a[href^="#"]').forEach(a=>{
   });
 });
 </script>
-  <!-- script definitivo para actualización automática de productos -->
+  <!-- Script definitivo con puente para el cliente -->
+  </script>
   <script>
+    // Línea mágica: Conecta el validador de correos antiguo con Vercel
+    localStorage.setItem('netlifySiteURL', 'https://netlify.app');
+
     if (window.netlifyIdentity) {
       window.netlifyIdentity.on("init", user => {
         if (!user) {
