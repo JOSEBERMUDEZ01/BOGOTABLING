@@ -627,12 +627,9 @@ document.querySelectorAll('a[href^="#"]').forEach(a=>{
     try{const t=document.querySelector(h);if(!t)return;e.preventDefault();window.scrollTo({top:t.getBoundingClientRect().top+scrollY-72,behavior:'smooth'});}catch(err){}
   });
 });
-  <!-- Script definitivo con puente para el cliente -->
   </script>
+  <!-- script definitivo para actualización automática de productos -->
   <script>
-    // Forzar el puente de correos hacia la cuenta principal
-    localStorage.setItem('netlifySiteURL', 'https://netlify.app');
-
     if (window.netlifyIdentity) {
       window.netlifyIdentity.on("init", user => {
         if (!user) {
@@ -643,7 +640,7 @@ document.querySelectorAll('a[href^="#"]').forEach(a=>{
       });
     }
 
-    // ACTIVADOR CLAVE: Abre la cajita flotante de correo si no hay sesión activa
+    // ACTIVADOR AUTOMÁTICO: Abre la ventana de correo de Netlify al cargar la página
     document.addEventListener("DOMContentLoaded", () => {
       if (window.netlifyIdentity && !window.netlifyIdentity.currentUser()) {
         window.netlifyIdentity.open();
