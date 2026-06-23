@@ -627,26 +627,5 @@ document.querySelectorAll('a[href^="#"]').forEach(a=>{
     try{const t=document.querySelector(h);if(!t)return;e.preventDefault();window.scrollTo({top:t.getBoundingClientRect().top+scrollY-72,behavior:'smooth'});}catch(err){}
   });
 });
-  <!-- Script definitivo con puente para el cliente -->
-  </script>
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      if (window.netlifyIdentity) {
-        window.netlifyIdentity.on("init", user => {
-          if (!user) {
-            window.netlifyIdentity.on("login", () => {
-              document.location.href = "/admin/";
-            });
-          }
-        });
-      }
-      
-      // Fuerza a abrir la cajita de correo tradicional en medio de la pantalla
-      if (window.netlifyIdentity && !window.netlifyIdentity.currentUser()) {
-        window.netlifyIdentity.open();
-      }
-    });
-  </script>
-  
 </body>
 </html>
