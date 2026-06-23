@@ -4,6 +4,7 @@ backend:
   branch: main
   base_url: https://vercel.app
   auth_endpoint: api/auth
+  proxy_url: https://vercel.app/api/auth
 
 # Carpetas limpias para que tu cliente suba fotos sin errores
 media_folder: "images/products"
