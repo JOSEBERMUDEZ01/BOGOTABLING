@@ -1,6 +1,8 @@
 backend:
-  name: git-gateway
+  name: github
+  repo: JOSEBERMUDEZ01/BOGOTABLING
   branch: main
+
 
 # Configuración limpia y directa para evitar la pantalla gris de error
 media_folder: "images/products"
