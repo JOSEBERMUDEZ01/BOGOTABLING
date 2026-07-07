@@ -1,37 +1,35 @@
-// /api/keepalive.js — VERSIÓN DE DIAGNÓSTICO (muestra el error real)
+// /api/keepalive.js — VERSIÓN DE DIAGNÓSTICO v2
 module.exports = async function handler(req, res) {
-  try {
-    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
-      res.status(500).json({ ok: false, error: 'Faltan variables de entorno SUPABASE_URL o SUPABASE_ANON_KEY' });
-      return;
-    }
+  const rawUrl = process.env.SUPABASE_URL || '';
+  const rawKey = process.env.SUPABASE_ANON_KEY || '';
 
-    const url = `${process.env.SUPABASE_URL}/rest/v1/products`
-      + `?select=id&limit=1`;
+  try {
+    const url = `${rawUrl}/rest/v1/products?select=id&limit=1`;
 
     const resp = await fetch(url, {
       headers: {
-        apikey: process.env.SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${process.env.SUPABASE_ANON_KEY}`,
+        apikey: rawKey,
+        Authorization: `Bearer ${rawKey}`,
       },
     });
 
     if (!resp.ok) {
       const texto = await resp.text();
-      res.status(502).json({ ok: false, error: texto, status: resp.status });
+      res.status(502).json({ ok: false, error: texto, status: resp.status, urlUsada: url });
       return;
     }
 
     const data = await resp.json();
-
-    res.status(200).json({
-      ok: true,
-      message: 'Supabase (Bogotá Bling) activo',
-      timestamp: new Date().toISOString(),
-      sample: data.length,
-    });
+    res.status(200).json({ ok: true, message: 'Supabase activo', sample: data.length });
   } catch (err) {
-    // Temporal: mostramos el error real para diagnosticar
-    res.status(500).json({ ok: false, error: err.message, stack: err.stack });
+    res.status(500).json({
+      ok: false,
+      error: err.message,
+      cause: err.cause ? String(err.cause) : null,
+      // Mostramos la URL construida (sin la key) para revisar el formato
+      urlConstruida: `${rawUrl}/rest/v1/products?select=id&limit=1`,
+      urlLength: rawUrl.length,
+      urlStartsWithHttps: rawUrl.startsWith('https://'),
+    });
   }
 };
