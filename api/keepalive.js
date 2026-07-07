@@ -1,19 +1,11 @@
-// /api/keepalive.js
-//
-// Bot de "mantenimiento" para Bogotá Bling: hace una consulta mínima
-// a Supabase para evitar que el proyecto se pause por inactividad
-// (los proyectos gratuitos de Supabase se pausan tras ~7 días sin uso).
-//
-// Sin dependencias: usa fetch() nativo, no requiere @supabase/supabase-js
-// ni package.json — Vercel detecta esto solo como función serverless.
-//
-// Variables de entorno necesarias (Vercel → Project Settings →
-// Environment Variables). Usa las MISMAS que ya tienes en el frontend:
-//   SUPABASE_URL       -> https://xulggoovlclvyzkbyhiq.supabase.co
-//   SUPABASE_ANON_KEY  -> tu sb_publishable_... (nunca la sb_secret_...)
-
+// /api/keepalive.js — VERSIÓN DE DIAGNÓSTICO (muestra el error real)
 module.exports = async function handler(req, res) {
   try {
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
+      res.status(500).json({ ok: false, error: 'Faltan variables de entorno SUPABASE_URL o SUPABASE_ANON_KEY' });
+      return;
+    }
+
     const url = `${process.env.SUPABASE_URL}/rest/v1/products`
       + `?select=id&limit=1`;
 
@@ -26,7 +18,7 @@ module.exports = async function handler(req, res) {
 
     if (!resp.ok) {
       const texto = await resp.text();
-      res.status(502).json({ ok: false, error: texto });
+      res.status(502).json({ ok: false, error: texto, status: resp.status });
       return;
     }
 
@@ -39,6 +31,7 @@ module.exports = async function handler(req, res) {
       sample: data.length,
     });
   } catch (err) {
-    res.status(500).json({ ok: false, error: 'Error interno en keepalive' });
+    // Temporal: mostramos el error real para diagnosticar
+    res.status(500).json({ ok: false, error: err.message, stack: err.stack });
   }
 };
