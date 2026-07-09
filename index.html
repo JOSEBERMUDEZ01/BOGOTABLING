@@ -410,22 +410,13 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{
 /* Optimización de renderizado de imágenes de producto */
 .pc-img img{content-visibility:auto}
 </style>
-  <!-- Supabase Auth: reemplaza a Netlify Identity — funciona en Vercel -->
+  <!-- Supabase (cliente compartido para leer el catálogo público) -->
   <!-- ⚠️ Reemplaza estos 2 valores por los de tu proyecto (Supabase → Settings → API) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script>
     const SUPABASE_URL = "https://xulggoovlclvyzkbyhiq.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_5rytTB3bbrAgwW4rHisMzQ_Zaubtuow";
-
     window.sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    // Igual que antes con Netlify Identity: si el usuario inicia sesión
-    // (o acepta una invitación por correo), lo mandamos al panel admin.
-    window.sb.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN" && session) {
-        window.location.href = "/admin/";
-      }
-    });
   </script>
 </head>
 <body>
