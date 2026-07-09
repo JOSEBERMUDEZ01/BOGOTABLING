@@ -765,6 +765,11 @@ async function loadCatalog(){
     btn.className='cat-nav-btn';
     btn.dataset.t=rg.root.slug;
     btn.textContent=(rg.root.icon?rg.root.icon+' ':'')+rg.root.name;
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.cat-nav-btn').forEach(x=>x.classList.remove('on'));
+      btn.classList.add('on');
+      jumpTo(rg.root.slug);
+    });
     navList.insertBefore(btn, novedadesBtn);
   });
 
