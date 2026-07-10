@@ -6,6 +6,7 @@
 <meta name="robots" content="noindex, nofollow"/>
 <title>Panel Admin — Bogotá Bling</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{background:#0a0a0b;color:#eee;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;font-size:14px;letter-spacing:-.005em}
@@ -266,9 +267,6 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
     <div class="subnav-inner">
       <button class="tab-btn active" data-view="products">⌚ Productos <span class="cnt" id="cntProducts"></span></button>
       <button class="tab-btn" data-view="categories">🗂 Categorías <span class="cnt" id="cntCategories"></span></button>
-      <button class="tab-btn" data-view="promotions">🔥 Promociones <span class="cnt" id="cntPromotions"></span></button>
-      <button class="tab-btn" data-view="orders">📦 Pedidos <span class="cnt" id="cntOrders"></span></button>
-      <button class="tab-btn" data-view="dashboard">📊 Estadísticas</button>
     </div>
   </div>
 
@@ -290,49 +288,6 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
         <button class="btn btn-primary btn-sm" onclick="openCategoryModal()">+ Nueva categoría</button>
       </div>
       <div class="tree" id="categoryTree"><p class="empty">Cargando…</p></div>
-    </div>
-
-    <!-- PROMOCIONES -->
-    <div class="view" id="view-promotions">
-      <div class="toolbar">
-        <div class="sub">Descuentos y campañas activas en el sitio</div>
-        <button class="btn btn-primary btn-sm" onclick="openPromoModal()">+ Nueva promoción</button>
-      </div>
-      <div class="table-wrap">
-        <table id="promotionsTable">
-          <thead><tr><th>Título</th><th>Descuento</th><th>Vigencia</th><th>Estado</th><th></th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- PEDIDOS -->
-    <div class="view" id="view-orders">
-      <div class="table-wrap">
-        <table id="ordersTable">
-          <thead><tr><th>#</th><th>Cliente</th><th>Total</th><th>Método</th><th>Estado</th><th>Fecha</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- DASHBOARD -->
-    <div class="view" id="view-dashboard">
-      <div class="stats-grid">
-        <div class="stat-card"><span class="ic">⌚</span><div class="num" id="statProducts">—</div><div class="lbl">Productos activos</div></div>
-        <div class="stat-card"><span class="ic">📦</span><div class="num" id="statOrders">—</div><div class="lbl">Pedidos totales</div></div>
-        <div class="stat-card accent"><span class="ic">💰</span><div class="num" id="statRevenue">—</div><div class="lbl">Ingresos totales</div></div>
-        <div class="stat-card"><span class="ic">⚠️</span><div class="num" id="statLowStock">—</div><div class="lbl">Bajo stock (&lt;5)</div></div>
-      </div>
-      <div class="section-card">
-        <h3>📦 Pedidos recientes</h3>
-        <div class="table-wrap">
-          <table id="recentOrdersTable">
-            <thead><tr><th>#</th><th>Cliente</th><th>Total</th><th>Estado</th><th>Fecha</th></tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
     </div>
 
   </div>
@@ -403,39 +358,83 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
   </div>
 </div>
 
-<!-- ══════════════ MODAL: PROMOCIÓN ══════════════ -->
-<div class="modal-bg" id="promoModalBg">
-  <div class="modal">
-    <h3>Nueva promoción</h3>
-    <div class="field"><label>Título</label><input id="promoTitle" type="text"/></div>
-    <div class="field"><label>Descripción</label><input id="promoDesc" type="text"/></div>
-    <div class="field-row">
-      <div class="field"><label>Descuento (%)</label><input id="promoDiscount" type="number" min="0" max="100"/></div>
-      <div class="field"><label>Válido hasta</label><input id="promoEnds" type="date"/></div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-primary" onclick="savePromo()">Guardar</button>
-      <button class="btn btn-outline" onclick="closeModal('promoModalBg')">Cancelar</button>
-    </div>
-  </div>
-</div>
-
 <!-- ══════════════ MODAL: SUBIDA MASIVA ══════════════ -->
 <div class="modal-bg" id="bulkModalBg">
   <div class="modal modal-wide">
     <h3>Subida masiva de productos</h3>
-    <p class="modal-sub">Pega un array JSON con tus productos. Útil para migrar catálogos antiguos o cargar muchos productos de una vez.</p>
-    <div class="bulk-help">
-      Formato esperado (cada objeto = un producto):<br/>
-      <code>{"name":"Reloj X","description":"...","category_slug":"relojes-hombre","price_current":250000,"price_previous":null,"stock":3,"is_featured":false,"is_new":false,"is_offer":false,"is_limited_edition":false,"image":"https://... o data:image/jpeg;base64,..."}</code><br/>
-      · <code>category_slug</code> debe ser una subcategoría existente (ej. <code>relojes-hombre</code>, no <code>relojes</code>).<br/>
-      · <code>image</code> puede ser una URL pública o una imagen en base64 — ambas se guardan automáticamente.
+    <p class="modal-sub">Elige cómo quieres cargar varios productos a la vez.</p>
+
+    <div class="subnav-inner" style="padding:0 0 16px;overflow:visible">
+      <button type="button" class="tab-btn active" data-bulkmode="images">🖼 Imágenes</button>
+      <button type="button" class="tab-btn" data-bulkmode="pdf">📄 PDF</button>
+      <button type="button" class="tab-btn" data-bulkmode="json">🧾 JSON</button>
     </div>
-    <div class="field">
-      <label>JSON de productos</label>
-      <textarea id="bulkJson" style="min-height:180px;font-family:monospace;font-size:.78rem" placeholder="[ { &quot;name&quot;: ... } ]"></textarea>
+
+    <!-- MODO IMÁGENES -->
+    <div class="bulk-mode" id="bulkMode-images">
+      <div class="bulk-help">
+        Sube varias fotos a la vez. Se crea <b>un producto por cada foto</b>, con el nombre base que
+        escribas + un número (ej. "Reloj 1", "Reloj 2"...). Luego editas cada uno para ajustar
+        nombre, precio y foto adicional si hace falta.
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Nombre base</label><input id="bulkImgName" type="text" placeholder="Ej: Reloj"/></div>
+        <div class="field"><label>Categoría</label><select id="bulkImgCategory"></select></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Precio (opcional)</label><input id="bulkImgPrice" type="number" min="0" step="1000" placeholder="Déjalo vacío = Consultar"/></div>
+        <div class="field"><label>Stock inicial</label><input id="bulkImgStock" type="number" min="0" value="3"/></div>
+      </div>
+      <div class="field">
+        <label>Fotos</label>
+        <div class="file-drop" onclick="document.getElementById('bulkImgInput').click()">
+          Haz clic para elegir varias fotos
+        </div>
+        <input type="file" id="bulkImgInput" accept="image/*" multiple style="display:none" onchange="handleBulkImageSelect(event)"/>
+        <div class="thumbs" id="bulkImgThumbs"></div>
+      </div>
     </div>
-    <div class="field" style="display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:12px 14px">
+
+    <!-- MODO PDF -->
+    <div class="bulk-mode" id="bulkMode-pdf" style="display:none">
+      <div class="bulk-help">
+        Sube un catálogo en PDF donde <b>cada página tenga la foto de un producto</b>. Cada página se
+        convierte en un producto nuevo, igual que en el modo Imágenes.
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Nombre base</label><input id="bulkPdfName" type="text" placeholder="Ej: Reloj"/></div>
+        <div class="field"><label>Categoría</label><select id="bulkPdfCategory"></select></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Precio (opcional)</label><input id="bulkPdfPrice" type="number" min="0" step="1000" placeholder="Déjalo vacío = Consultar"/></div>
+        <div class="field"><label>Stock inicial</label><input id="bulkPdfStock" type="number" min="0" value="3"/></div>
+      </div>
+      <div class="field">
+        <label>Archivo PDF</label>
+        <div class="file-drop" onclick="document.getElementById('bulkPdfInput').click()">
+          Haz clic para elegir el PDF
+        </div>
+        <input type="file" id="bulkPdfInput" accept="application/pdf" style="display:none" onchange="handleBulkPdfSelect(event)"/>
+        <div class="bulk-help" id="bulkPdfInfo" style="display:none;margin-top:10px"></div>
+      </div>
+    </div>
+
+    <!-- MODO JSON -->
+    <div class="bulk-mode" id="bulkMode-json" style="display:none">
+      <div class="bulk-help">
+        Para migraciones o cuando ya tienes los datos exportados de otro sistema.<br/>
+        Formato esperado (cada objeto = un producto):<br/>
+        <code>{"name":"Reloj X","description":"...","category_slug":"relojes-hombre","price_current":250000,"price_previous":null,"stock":3,"is_featured":false,"is_new":false,"is_offer":false,"is_limited_edition":false,"image":"https://... o data:image/jpeg;base64,..."}</code><br/>
+        · <code>category_slug</code> debe ser una subcategoría existente (ej. <code>relojes-hombre</code>, no <code>relojes</code>).<br/>
+        · <code>image</code> puede ser una URL pública o una imagen en base64 — ambas se guardan automáticamente.
+      </div>
+      <div class="field">
+        <label>JSON de productos</label>
+        <textarea id="bulkJson" style="min-height:160px;font-family:monospace;font-size:.78rem" placeholder="[ { &quot;name&quot;: ... } ]"></textarea>
+      </div>
+    </div>
+
+    <div class="field" style="display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:12px 14px;margin-top:4px">
       <input type="checkbox" id="bulkCompress" checked style="width:16px;height:16px;flex-shrink:0"/>
       <label for="bulkCompress" style="margin:0;font-size:.8rem;color:var(--tx2);cursor:pointer">
         Comprimir imágenes automáticamente <span style="color:var(--tx3)">(recomendado — reduce el peso antes de subirlas a Storage)</span>
@@ -458,6 +457,9 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let pendingImages = [];
 let categoriesCache = [];
 let productsCache = [];
+let bulkImageFiles = [];
+let bulkPdfFile = null;
+let activeBulkMode = 'images';
 
 // ───────────── AUTH ─────────────
 async function handleLogin(){
@@ -505,9 +507,6 @@ function showApp(){
   document.getElementById('app').style.display = 'block';
   loadCategories();
   loadProducts();
-  loadPromotions();
-  loadOrders();
-  loadDashboard();
 }
 
 // ───────────── NAVEGACIÓN (pills) ─────────────
@@ -525,33 +524,6 @@ function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 function openModal(id){ document.getElementById(id).classList.add('open'); }
 
 // ───────────── DASHBOARD ─────────────
-async function loadDashboard(){
-  const [{ count: productCount }, { count: orderCount }, { data: orders }, { count: lowStock }] = await Promise.all([
-    sb.from('products').select('*', { count: 'exact', head: true }),
-    sb.from('orders').select('*', { count: 'exact', head: true }),
-    sb.from('orders').select('*, customers(full_name)').order('created_at',{ascending:false}),
-    sb.from('products').select('*', { count: 'exact', head: true }).lt('stock', 5),
-  ]);
-  const revenue = (orders || []).reduce((sum, o) => sum + Number(o.total || 0), 0);
-
-  document.getElementById('statProducts').textContent = productCount ?? 0;
-  document.getElementById('statOrders').textContent = orderCount ?? 0;
-  document.getElementById('statRevenue').textContent = '$' + revenue.toLocaleString('es-CO');
-  document.getElementById('statLowStock').textContent = lowStock ?? 0;
-  document.getElementById('cntProducts').textContent = productCount ?? 0;
-  document.getElementById('cntOrders').textContent = orderCount ?? 0;
-
-  const tbody = document.querySelector('#recentOrdersTable tbody');
-  const recent = (orders || []).slice(0, 6);
-  tbody.innerHTML = recent.length ? recent.map(o=>`<tr>
-    <td>#${o.order_number}</td>
-    <td>${o.customers?.full_name || 'N/D'}</td>
-    <td>$${Number(o.total).toLocaleString('es-CO')}</td>
-    <td><span class="pill ${o.status==='cancelado'?'off':'on'}">${o.status}</span></td>
-    <td>${new Date(o.created_at).toLocaleDateString('es-CO')}</td>
-  </tr>`).join('') : '<tr><td colspan="5" class="empty">Aún no hay pedidos.</td></tr>';
-}
-
 // ───────────── CATEGORÍAS (árbol profesional) ─────────────
 async function loadCategories(){
   const { data } = await sb.from('categories').select('*').order('position').order('name');
@@ -610,18 +582,28 @@ function renderCategorySelects(){
   parentSel.innerHTML = '<option value="">— Categoría principal —</option>' +
     roots.map(c=>`<option value="${c.id}">${c.icon || ''} ${c.name}</option>`).join('');
 
-  const sel = document.getElementById('productCategory');
-  sel.innerHTML = '';
+  const optionsHtml = buildCategoryOptionsHtml();
+  document.getElementById('productCategory').innerHTML = optionsHtml;
+  document.getElementById('bulkImgCategory').innerHTML = optionsHtml;
+  document.getElementById('bulkPdfCategory').innerHTML = optionsHtml;
+}
+
+function buildCategoryOptionsHtml(){
+  const all = categoriesCache;
+  const roots = all.filter(c => !c.parent_id);
+  const childrenOf = pid => all.filter(c => c.parent_id === pid);
+  let html = '';
   roots.forEach(cat=>{
     const kids = childrenOf(cat.id);
     if (!kids.length){
-      sel.innerHTML += `<option value="${cat.id}">${cat.icon || ''} ${cat.name}</option>`;
+      html += `<option value="${cat.id}">${cat.icon || ''} ${cat.name}</option>`;
     } else {
       kids.forEach(sub=>{
-        sel.innerHTML += `<option value="${sub.id}">${cat.icon||''} ${cat.name} → ${sub.name}</option>`;
+        html += `<option value="${sub.id}">${cat.icon||''} ${cat.name} → ${sub.name}</option>`;
       });
     }
   });
+  return html;
 }
 
 function openCategoryModal(preselectParentId){
@@ -868,14 +850,12 @@ async function saveProduct(){
   btn.textContent = 'Guardar';
   closeModal('productModalBg');
   loadProducts();
-  loadDashboard();
 }
 
 async function deleteProduct(id){
   if (!confirm('¿Eliminar este producto? Esta acción no se puede deshacer.')) return;
   await sb.from('products').delete().eq('id', id);
   loadProducts();
-  loadDashboard();
 }
 
 // ───────────── SUBIDA MASIVA ─────────────
@@ -883,7 +863,81 @@ function openBulkModal(){
   document.getElementById('bulkJson').value = '';
   document.getElementById('bulkLog').innerHTML = '';
   document.getElementById('bulkLog').classList.remove('show');
+
+  document.getElementById('bulkImgName').value = '';
+  document.getElementById('bulkImgPrice').value = '';
+  document.getElementById('bulkImgStock').value = 3;
+  document.getElementById('bulkImgThumbs').innerHTML = '';
+  document.getElementById('bulkImgInput').value = '';
+  bulkImageFiles = [];
+
+  document.getElementById('bulkPdfName').value = '';
+  document.getElementById('bulkPdfPrice').value = '';
+  document.getElementById('bulkPdfStock').value = 3;
+  document.getElementById('bulkPdfInfo').style.display = 'none';
+  document.getElementById('bulkPdfInput').value = '';
+  bulkPdfFile = null;
+
+  switchBulkMode('images');
   openModal('bulkModalBg');
+}
+
+function switchBulkMode(mode){
+  activeBulkMode = mode;
+  document.querySelectorAll('[data-bulkmode]').forEach(b=>b.classList.toggle('active', b.dataset.bulkmode===mode));
+  ['images','pdf','json'].forEach(m=>{
+    document.getElementById('bulkMode-'+m).style.display = (m===mode) ? '' : 'none';
+  });
+}
+document.querySelectorAll('[data-bulkmode]').forEach(btn=>{
+  btn.addEventListener('click', ()=>switchBulkMode(btn.dataset.bulkmode));
+});
+
+function handleBulkImageSelect(event){
+  const files = Array.from(event.target.files);
+  bulkImageFiles = bulkImageFiles.concat(files);
+  const thumbs = document.getElementById('bulkImgThumbs');
+  files.forEach(file=>{
+    const reader = new FileReader();
+    reader.onload = e => { thumbs.innerHTML += `<img src="${e.target.result}"/>`; };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handleBulkPdfSelect(event){
+  const file = event.target.files[0];
+  if (!file) return;
+  bulkPdfFile = file;
+  const info = document.getElementById('bulkPdfInfo');
+  info.style.display = 'block';
+  info.textContent = 'Leyendo PDF…';
+  try {
+    if (window['pdfjsLib']) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js';
+    }
+    const buf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+    info.textContent = `✔ PDF cargado: ${pdf.numPages} página${pdf.numPages===1?'':'s'} → se crearán ${pdf.numPages} producto${pdf.numPages===1?'':'s'}.`;
+  } catch (e) {
+    info.textContent = '⚠ No se pudo leer el PDF: ' + e.message;
+  }
+}
+
+// Convierte cada página de un PDF en una imagen (dataURL) usando pdf.js
+async function pdfToImages(file){
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  const images = [];
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const viewport = page.getViewport({ scale: 2 });
+    const canvas = document.createElement('canvas');
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+    images.push(canvas.toDataURL('image/jpeg', 0.9));
+  }
+  return images;
 }
 
 function base64ToBlob(dataUrl){
@@ -922,15 +976,70 @@ function bulkLog(msg, cls){
 }
 
 async function runBulkImport(){
-  let items;
-  try {
-    items = JSON.parse(document.getElementById('bulkJson').value);
-    if (!Array.isArray(items)) throw new Error('El JSON debe ser un array [ ]');
-  } catch (e) {
-    alert('JSON inválido: ' + e.message);
-    return;
+  let items = [];
+
+  if (activeBulkMode === 'json') {
+    try {
+      items = JSON.parse(document.getElementById('bulkJson').value);
+      if (!Array.isArray(items)) throw new Error('El JSON debe ser un array [ ]');
+    } catch (e) {
+      alert('JSON inválido: ' + e.message);
+      return;
+    }
   }
 
+  else if (activeBulkMode === 'images') {
+    if (!bulkImageFiles.length) { alert('Elige al menos una foto.'); return; }
+    const catId = document.getElementById('bulkImgCategory').value;
+    const cat = categoriesCache.find(c => c.id === catId);
+    const base = document.getElementById('bulkImgName').value.trim() || 'Producto';
+    const price = document.getElementById('bulkImgPrice').value;
+    const stock = Number(document.getElementById('bulkImgStock').value) || 0;
+    items = bulkImageFiles.map((file, i) => ({
+      name: `${base} ${i + 1}`,
+      description: '',
+      category_slug: cat ? cat.slug : null,
+      price_current: price ? Number(price) : undefined,
+      stock,
+      image: file,
+    }));
+  }
+
+  else if (activeBulkMode === 'pdf') {
+    if (!bulkPdfFile) { alert('Elige un archivo PDF.'); return; }
+    const catId = document.getElementById('bulkPdfCategory').value;
+    const cat = categoriesCache.find(c => c.id === catId);
+    const base = document.getElementById('bulkPdfName').value.trim() || 'Producto';
+    const price = document.getElementById('bulkPdfPrice').value;
+    const stock = Number(document.getElementById('bulkPdfStock').value) || 0;
+
+    const btn = document.getElementById('bulkRunBtn');
+    btn.disabled = true; btn.textContent = 'Leyendo PDF…';
+    let pages;
+    try {
+      pages = await pdfToImages(bulkPdfFile);
+    } catch (e) {
+      alert('No se pudo leer el PDF: ' + e.message);
+      btn.disabled = false; btn.textContent = 'Importar productos';
+      return;
+    }
+    items = pages.map((dataUrl, i) => ({
+      name: `${base} ${i + 1}`,
+      description: '',
+      category_slug: cat ? cat.slug : null,
+      price_current: price ? Number(price) : undefined,
+      stock,
+      image: dataUrl,
+    }));
+  }
+
+  await processBulkItems(items);
+}
+
+// Procesa una lista de productos {name, description, category_slug, price_current, price_previous,
+// stock, is_featured, is_new, is_offer, is_limited_edition, image}. `image` puede ser un File,
+// un dataURL base64, una URL pública, o venir vacío.
+async function processBulkItems(items){
   const btn = document.getElementById('bulkRunBtn');
   btn.disabled = true;
   btn.textContent = 'Importando…';
@@ -971,12 +1080,21 @@ async function runBulkImport(){
 
       if (item.image) {
         let publicUrl = null;
-        if (item.image.startsWith('data:')) {
-          const originalBlob = base64ToBlob(item.image);
+
+        // Normaliza el origen de la imagen a un dataURL base64 cuando aplica
+        let dataUrl = null;
+        if (item.image instanceof File) {
+          dataUrl = await fileToDataUrl(item.image);
+        } else if (typeof item.image === 'string' && item.image.startsWith('data:')) {
+          dataUrl = item.image;
+        }
+
+        if (dataUrl) {
+          const originalBlob = base64ToBlob(dataUrl);
           let blob = originalBlob;
           if (compressEnabled) {
             try {
-              blob = await compressImage(item.image);
+              blob = await compressImage(dataUrl);
               bulkLog(`&nbsp;&nbsp;↳ imagen: ${(originalBlob.size/1024).toFixed(0)}KB → ${(blob.size/1024).toFixed(0)}KB`);
             } catch (e) {
               blob = originalBlob;
@@ -989,9 +1107,10 @@ async function runBulkImport(){
             const { data: pub } = sb.storage.from('product-images').getPublicUrl(path);
             publicUrl = pub.publicUrl;
           }
-        } else {
-          publicUrl = item.image;
+        } else if (typeof item.image === 'string') {
+          publicUrl = item.image; // URL pública directa
         }
+
         if (publicUrl) await sb.from('product_images').insert({ product_id: prod.id, image_url: publicUrl });
       }
 
@@ -1007,80 +1126,7 @@ async function runBulkImport(){
   btn.disabled = false;
   btn.textContent = 'Importar productos';
   loadProducts();
-  loadDashboard();
 }
-
-// ───────────── PROMOCIONES ─────────────
-async function loadPromotions(){
-  const { data } = await sb.from('promotions').select('*').order('created_at', { ascending: false });
-  document.getElementById('cntPromotions').textContent = (data||[]).filter(p=>p.active).length;
-  const tbody = document.querySelector('#promotionsTable tbody');
-  if (!data || !data.length){ tbody.innerHTML = '<tr><td colspan="5" class="empty">No hay promociones todavía.</td></tr>'; return; }
-  tbody.innerHTML = data.map(promo=>`<tr>
-    <td>${promo.title}</td>
-    <td>${promo.discount_percent ? promo.discount_percent + '%' : '—'}</td>
-    <td>${promo.ends_at ? new Date(promo.ends_at).toLocaleDateString('es-CO') : 'Sin fecha límite'}</td>
-    <td><span class="pill ${promo.active?'on':'off'}">${promo.active ? 'Activa' : 'Inactiva'}</span></td>
-    <td><button class="btn btn-outline btn-sm" onclick="deletePromo('${promo.id}')">Eliminar</button></td>
-  </tr>`).join('');
-}
-
-function openPromoModal(){
-  document.getElementById('promoTitle').value = '';
-  document.getElementById('promoDesc').value = '';
-  document.getElementById('promoDiscount').value = '';
-  document.getElementById('promoEnds').value = '';
-  openModal('promoModalBg');
-}
-
-async function savePromo(){
-  const title = document.getElementById('promoTitle').value.trim();
-  if (!title) return;
-  const payload = {
-    title,
-    description: document.getElementById('promoDesc').value.trim(),
-    discount_percent: Number(document.getElementById('promoDiscount').value) || null,
-    ends_at: document.getElementById('promoEnds').value || null,
-    active: true,
-  };
-  const { error } = await sb.from('promotions').insert(payload);
-  if (error) { alert('Error: ' + error.message); return; }
-  closeModal('promoModalBg');
-  loadPromotions();
-}
-
-async function deletePromo(id){
-  if (!confirm('¿Eliminar esta promoción?')) return;
-  await sb.from('promotions').delete().eq('id', id);
-  loadPromotions();
-}
-
-// ───────────── PEDIDOS ─────────────
-async function loadOrders(){
-  const { data } = await sb.from('orders').select('*, customers(full_name)').order('created_at', { ascending: false });
-  document.getElementById('cntOrders').textContent = (data||[]).length;
-  const tbody = document.querySelector('#ordersTable tbody');
-  if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="empty">Aún no hay pedidos.</td></tr>'; return; }
-  tbody.innerHTML = data.map(o=>`<tr>
-    <td>#${o.order_number}</td>
-    <td>${o.customers?.full_name || 'N/D'}</td>
-    <td>$${Number(o.total).toLocaleString('es-CO')}</td>
-    <td>${o.payment_method || '—'}</td>
-    <td>
-      <select class="status-select" onchange="updateOrderStatus('${o.id}', this.value)">
-        ${['pendiente','confirmado','enviado','entregado','cancelado'].map(s=>
-          `<option value="${s}" ${o.status===s?'selected':''}>${s}</option>`).join('')}
-      </select>
-    </td>
-    <td>${new Date(o.created_at).toLocaleDateString('es-CO')}</td>
-  </tr>`).join('');
-}
-
-async function updateOrderStatus(id, status){
-  await sb.from('orders').update({ status }).eq('id', id);
-  loadDashboard();
-}
-
 // ───────────── INIT ─────────────
 goToView('products');
 checkSession();
