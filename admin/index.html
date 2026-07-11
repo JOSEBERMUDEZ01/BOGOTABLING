@@ -449,7 +449,7 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
       <div class="toolbar" style="margin-bottom:10px">
         <div class="sub"><b id="bulkReviewCount">0</b> producto(s) listos para revisar — edita lo que haga falta antes de importar</div>
         <div style="display:flex;gap:8px">
-          <button class="btn btn-gold btn-xs" id="bulkAiBtn" onclick="detectAllWithAI()">🤖 Detectar con IA (nombre + categoría)</button>
+          <button class="btn btn-gold btn-xs" id="bulkAiBtn" onclick="detectAllWithAI()">🔍 Detectar categoría (gratis)</button>
           <button class="btn btn-outline btn-xs" onclick="clearBulkDrafts()">Vaciar lista</button>
         </div>
       </div>
@@ -1086,40 +1086,49 @@ function closeLightbox(){
 }
 
 // ───────────── DETECCIÓN CON IA (Claude, vía función serverless) ─────────────
+// Lee el texto que aparezca DENTRO de la foto (etiquetas, cajas, marcas) usando
+// OCR gratuito que corre en tu propio navegador (Tesseract.js) — sin API, sin costo,
+// sin tarjeta. Combina ese texto con el nombre del archivo para detectar la categoría.
 async function detectAllWithAI(){
   if (!bulkDrafts.length) return;
-  const catList = selectableCategories().map(c=>{
-    const parent = categoriesCache.find(p => p.id === c.parent_id);
-    return { slug: c.slug, name: (parent ? parent.name + ' → ' : '') + c.name };
-  });
+  if (!window.Tesseract) { alert('La librería de reconocimiento de texto no cargó. Verifica tu conexión y recarga la página.'); return; }
 
   const btn = document.getElementById('bulkAiBtn');
   btn.disabled = true;
 
   for (let i = 0; i < bulkDrafts.length; i++) {
-    btn.textContent = `🤖 Analizando ${i + 1}/${bulkDrafts.length}…`;
+    btn.textContent = `🔍 Leyendo foto ${i + 1}/${bulkDrafts.length}…`;
     try {
-      const resp = await fetch('/api/detect-product', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: bulkDrafts[i].thumb, categories: catList }),
-      });
-      const data = await resp.json();
-      if (!resp.ok) throw new Error(data.error || 'Error de la IA');
-
-      if (data.category_slug) {
-        const cat = categoriesCache.find(c => c.slug === data.category_slug);
-        if (cat) { bulkDrafts[i].categoryId = cat.id; bulkDrafts[i].detected = true; }
+      const { data: { text } } = await Tesseract.recognize(bulkDrafts[i].thumb, 'spa+eng');
+      const cat = detectCategoryFromText(text);
+      if (cat) {
+        bulkDrafts[i].categoryId = cat.id;
+        bulkDrafts[i].detected = true;
       }
-      if (data.name) bulkDrafts[i].name = data.name;
     } catch (e) {
-      console.error('Detección IA falló para item', i, e);
+      console.error('OCR falló para item', i, e);
     }
     renderBulkReview();
   }
 
   btn.disabled = false;
-  btn.textContent = '🤖 Detectar con IA (nombre + categoría)';
+  btn.textContent = '🔍 Detectar categoría (gratis)';
+  bulkLog2(`Listo — revisa las categorías detectadas antes de importar. El texto leído en la foto no siempre alcanza para adivinar sola, así que corrige lo que haga falta.`);
+}
+
+function bulkLog2(msg){
+  const info = document.getElementById('bulkPdfInfo');
+  // Usamos un pequeño aviso reutilizando el estilo de ayuda, mostrado arriba de la lista
+  const el = document.getElementById('bulkReviewCount').closest('.toolbar');
+  let note = document.getElementById('bulkOcrNote');
+  if (!note) {
+    note = document.createElement('div');
+    note.id = 'bulkOcrNote';
+    note.className = 'bulk-help';
+    note.style.marginTop = '8px';
+    el.after(note);
+  }
+  note.textContent = msg;
 }
 
 // Sinónimos para reconocer la categoría en texto (nombre de archivo o página de PDF).
