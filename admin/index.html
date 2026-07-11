@@ -282,6 +282,7 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
       <div class="brand"><div class="mark">⌚</div>Bogotá Bling<small style="margin-left:4px">ADMIN</small></div>
       <div class="topbar-actions">
         <a href="/" target="_blank" class="btn btn-outline btn-sm">↗ Ver sitio</a>
+        <button class="btn btn-outline btn-sm" onclick="openPromoBarModal()">🔥 Promoción</button>
         <button class="btn btn-gold btn-sm" onclick="openBulkModal()">📦 Subida masiva</button>
         <button class="btn btn-primary btn-sm" onclick="openProductModal()">+ Nuevo producto</button>
         <button class="btn btn-outline btn-sm btn-icon" onclick="handleLogout()" title="Cerrar sesión">⏻</button>
@@ -310,6 +311,7 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
       <div class="bulk-select-bar" id="bulkSelectBar">
         <span class="sub"><b id="selectedCount">0</b> seleccionado(s)</span>
         <button class="btn btn-outline btn-sm" onclick="selectAllProducts()">Seleccionar todo</button>
+        <button class="btn btn-gold btn-sm" onclick="openBulkEditModal()">✎ Editar seleccionados</button>
         <button class="btn btn-primary btn-sm" style="background:var(--r)" onclick="deleteSelectedProducts()">🗑 Eliminar seleccionados</button>
       </div>
       <div class="grid" id="productsGrid"><p class="empty">Cargando…</p></div>
@@ -393,6 +395,59 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
 </div>
 
 <!-- ══════════════ MODAL: SUBIDA MASIVA ══════════════ -->
+<!-- ══════════════ MODAL: PROMOCIÓN (franja del sitio) ══════════════ -->
+<!-- ══════════════ MODAL: EDICIÓN MASIVA ══════════════ -->
+<div class="modal-bg" id="bulkEditModalBg">
+  <div class="modal">
+    <h3>Editar <span id="bulkEditCount">0</span> producto(s)</h3>
+    <p class="modal-sub">Solo se cambia lo que actives o llenes abajo — deja vacío/apagado lo que no quieras tocar.</p>
+
+    <div class="field" style="display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:10px 14px;margin-bottom:6px">
+      <input type="checkbox" id="bulkEditCatOn" style="width:16px;height:16px;flex-shrink:0"/>
+      <select id="bulkEditCat" style="flex:1"></select>
+    </div>
+    <div class="field" style="display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:10px 14px;margin-bottom:6px">
+      <input type="checkbox" id="bulkEditPriceOn" style="width:16px;height:16px;flex-shrink:0"/>
+      <input type="number" id="bulkEditPrice" placeholder="Nuevo precio para todos" style="flex:1;background:var(--panel);border:1px solid var(--line2);border-radius:7px;padding:8px 10px;color:#fff"/>
+    </div>
+    <div class="field" style="display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:10px 14px;margin-bottom:6px">
+      <input type="checkbox" id="bulkEditStockOn" style="width:16px;height:16px;flex-shrink:0"/>
+      <input type="number" id="bulkEditStock" placeholder="Nuevo stock para todos" style="flex:1;background:var(--panel);border:1px solid var(--line2);border-radius:7px;padding:8px 10px;color:#fff"/>
+    </div>
+    <div class="checks" style="margin-top:14px">
+      <label><input type="checkbox" id="bulkEditFeaturedOn"/> Marcar ⭐ Destacado</label>
+      <label><input type="checkbox" id="bulkEditOfferOn"/> Marcar 🔥 Oferta</label>
+      <label><input type="checkbox" id="bulkEditSoldOutOn"/> Marcar Agotado</label>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="applyBulkEdit()">Aplicar cambios</button>
+      <button class="btn btn-outline" onclick="closeModal('bulkEditModalBg')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="promoBarModalBg">
+  <div class="modal">
+    <h3>Promoción del sitio</h3>
+    <p class="modal-sub">Controla la franja roja que aparece arriba del todo en el sitio público. Si la apagas, no se muestra nada.</p>
+    <div class="field" style="display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:12px 14px">
+      <input type="checkbox" id="promoBarActive" style="width:16px;height:16px;flex-shrink:0"/>
+      <label for="promoBarActive" style="margin:0;font-size:.85rem;color:var(--tx2);cursor:pointer">Mostrar la franja de promoción en el sitio</label>
+    </div>
+    <div class="field"><label>Título</label><input id="promoBarTitle" type="text" placeholder="Ej: Envío gratis esta semana"/></div>
+    <div class="field"><label>Descripción (opcional)</label><input id="promoBarDesc" type="text" placeholder="Ej: En compras desde $200.000"/></div>
+    <div class="field-row">
+      <div class="field"><label>Descuento % (opcional)</label><input id="promoBarDiscount" type="number" min="0" max="100"/></div>
+      <div class="field"><label>Vence (opcional)</label><input id="promoBarEnds" type="date"/></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="savePromoBar()">Guardar</button>
+      <button class="btn btn-outline" onclick="closeModal('promoBarModalBg')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-bg" id="bulkModalBg">
   <div class="modal modal-wide">
     <h3>Subida masiva de productos</h3>
@@ -744,6 +799,7 @@ function renderProductsGrid(){
         <div class="badges">${badges.join('')}</div>
         <div class="card-actions">
           <button class="btn btn-outline btn-sm" onclick='editProduct(${JSON.stringify(p).replace(/'/g,"&apos;")})'>Editar</button>
+          <button class="btn btn-outline btn-sm btn-icon" onclick="duplicateProduct('${p.id}')" title="Duplicar">⧉</button>
           <button class="btn btn-outline btn-sm" onclick="deleteProduct('${p.id}')">Eliminar</button>
         </div>
       </div>
@@ -788,6 +844,77 @@ async function deleteSelectedProducts(){
   if (error) { alert('Error: ' + error.message); return; }
   selectedProductIds.clear();
   updateSelectBar();
+  loadProducts();
+}
+
+// ───────────── EDICIÓN MASIVA ─────────────
+function openBulkEditModal(){
+  const ids = Array.from(selectedProductIds);
+  if (!ids.length) return;
+  document.getElementById('bulkEditCount').textContent = ids.length;
+  document.getElementById('bulkEditCat').innerHTML = buildCategoryOptionsHtml();
+  document.getElementById('bulkEditCatOn').checked = false;
+  document.getElementById('bulkEditPriceOn').checked = false;
+  document.getElementById('bulkEditPrice').value = '';
+  document.getElementById('bulkEditStockOn').checked = false;
+  document.getElementById('bulkEditStock').value = '';
+  document.getElementById('bulkEditFeaturedOn').checked = false;
+  document.getElementById('bulkEditOfferOn').checked = false;
+  document.getElementById('bulkEditSoldOutOn').checked = false;
+  openModal('bulkEditModalBg');
+}
+
+async function applyBulkEdit(){
+  const ids = Array.from(selectedProductIds);
+  if (!ids.length) return;
+
+  const payload = {};
+  if (document.getElementById('bulkEditCatOn').checked) payload.category_id = document.getElementById('bulkEditCat').value || null;
+  if (document.getElementById('bulkEditPriceOn').checked) payload.price_current = Number(document.getElementById('bulkEditPrice').value) || 0;
+  if (document.getElementById('bulkEditStockOn').checked) payload.stock = Number(document.getElementById('bulkEditStock').value) || 0;
+  if (document.getElementById('bulkEditFeaturedOn').checked) payload.is_featured = true;
+  if (document.getElementById('bulkEditOfferOn').checked) payload.is_offer = true;
+  if (document.getElementById('bulkEditSoldOutOn').checked) payload.is_sold_out = true;
+
+  if (!Object.keys(payload).length) { alert('Activa al menos un campo para cambiar.'); return; }
+
+  const { error } = await sb.from('products').update(payload).in('id', ids);
+  if (error) { alert('Error: ' + error.message); return; }
+  closeModal('bulkEditModalBg');
+  toggleSelectMode();
+  loadProducts();
+}
+
+// ───────────── DUPLICAR PRODUCTO ─────────────
+async function duplicateProduct(id){
+  const original = productsCache.find(p => p.id === id);
+  if (!original) return;
+  if (!confirm(`¿Duplicar "${original.name}"? Se creará una copia editable.`)) return;
+
+  const slug = slugify(original.name) + '-copia-' + Date.now().toString(36).slice(-4);
+  const { data: copy, error } = await sb.from('products').insert({
+    name: original.name + ' (copia)',
+    slug,
+    description: original.description,
+    category_id: original.category_id,
+    stock: original.stock,
+    price_current: original.price_current,
+    price_previous: original.price_previous,
+    discount_percent: original.discount_percent,
+    is_featured: original.is_featured,
+    is_new: original.is_new,
+    is_offer: original.is_offer,
+    is_limited_edition: original.is_limited_edition,
+    is_sold_out: original.is_sold_out,
+  }).select().single();
+
+  if (error) { alert('Error: ' + error.message); return; }
+
+  const images = original.product_images || [];
+  if (images.length) {
+    await sb.from('product_images').insert(images.map(img => ({ product_id: copy.id, image_url: img.image_url })));
+  }
+
   loadProducts();
 }
 
@@ -1338,6 +1465,42 @@ async function processBulkItems(items){
   btn.textContent = 'Importar productos';
   loadProducts();
 }
+// ───────────── PROMOCIÓN DEL SITIO (franja) ─────────────
+let currentPromoId = null;
+
+async function openPromoBarModal(){
+  const { data } = await sb.from('promotions').select('*').order('created_at', { ascending: false }).limit(1);
+  const promo = data && data[0];
+  currentPromoId = promo ? promo.id : null;
+  document.getElementById('promoBarActive').checked = promo ? !!promo.active : false;
+  document.getElementById('promoBarTitle').value = promo ? (promo.title || '') : '';
+  document.getElementById('promoBarDesc').value = promo ? (promo.description || '') : '';
+  document.getElementById('promoBarDiscount').value = promo && promo.discount_percent ? promo.discount_percent : '';
+  document.getElementById('promoBarEnds').value = promo && promo.ends_at ? promo.ends_at.slice(0, 10) : '';
+  openModal('promoBarModalBg');
+}
+
+async function savePromoBar(){
+  const active = document.getElementById('promoBarActive').checked;
+  const title = document.getElementById('promoBarTitle').value.trim();
+  if (active && !title) { alert('Ponle un título a la promoción, o desactívala si no quieres mostrar nada.'); return; }
+
+  const payload = {
+    title: title || 'Promoción',
+    description: document.getElementById('promoBarDesc').value.trim(),
+    discount_percent: Number(document.getElementById('promoBarDiscount').value) || null,
+    ends_at: document.getElementById('promoBarEnds').value || null,
+    active,
+  };
+
+  const { error } = currentPromoId
+    ? await sb.from('promotions').update(payload).eq('id', currentPromoId)
+    : await sb.from('promotions').insert(payload);
+
+  if (error) { alert('Error: ' + error.message); return; }
+  closeModal('promoBarModalBg');
+}
+
 // ───────────── INIT ─────────────
 goToView('products');
 checkSession();
