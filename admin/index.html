@@ -7,6 +7,7 @@
 <title>Panel Admin — Bogotá Bling</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{background:#0a0a0b;color:#eee;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;font-size:14px;letter-spacing:-.005em}
@@ -227,6 +228,12 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
 .bulk-select-bar.show{display:flex}
 .bulk-select-bar .sub{color:var(--tx2);font-size:.82rem;flex:1}
 
+/* Lightbox: vista previa grande al hacer clic en una miniatura */
+.lightbox-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:600;align-items:center;justify-content:center;padding:30px;cursor:zoom-out}
+.lightbox-bg.open{display:flex}
+.lightbox-bg img{max-width:90vw;max-height:90vh;object-fit:contain;border-radius:8px;box-shadow:var(--shadow-lg)}
+.bulk-row img, .card .thumb, .card .thumb-empty{cursor:zoom-in}
+
 @media (max-width:900px){
   .fab{display:flex}
   .search-input{width:100%}
@@ -441,7 +448,10 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
     <div id="bulkReviewWrap" style="display:none;margin-top:18px">
       <div class="toolbar" style="margin-bottom:10px">
         <div class="sub"><b id="bulkReviewCount">0</b> producto(s) listos para revisar — edita lo que haga falta antes de importar</div>
-        <button class="btn btn-outline btn-xs" onclick="clearBulkDrafts()">Vaciar lista</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-gold btn-xs" id="bulkAiBtn" onclick="detectAllWithAI()">🤖 Detectar con IA (nombre + categoría)</button>
+          <button class="btn btn-outline btn-xs" onclick="clearBulkDrafts()">Vaciar lista</button>
+        </div>
       </div>
       <div id="bulkReviewList" style="display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto"></div>
     </div>
@@ -458,6 +468,11 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
     </div>
     <div class="bulk-log" id="bulkLog"></div>
   </div>
+</div>
+
+<!-- ══════════════ LIGHTBOX: vista previa grande ══════════════ -->
+<div class="lightbox-bg" id="lightboxBg" onclick="closeLightbox()">
+  <img id="lightboxImg" src="" alt="Vista previa"/>
 </div>
 
 <script>
@@ -720,7 +735,7 @@ function renderProductsGrid(){
     if (p.is_sold_out || p.stock === 0) badges.push('<span class="badge">Agotado</span>');
     return `<div class="card ${selectedProductIds.has(p.id)?'selected':''}" data-id="${p.id}">
       <input type="checkbox" class="select-box" ${selectedProductIds.has(p.id)?'checked':''} onclick="event.stopPropagation();toggleProductSelected('${p.id}')"/>
-      ${img ? `<img class="thumb" src="${img}" alt="${p.name}"/>` : `<div class="thumb-empty">⌚</div>`}
+      ${img ? `<img class="thumb" src="${img}" alt="${p.name}" onclick='event.stopPropagation();openLightbox("${img}")'/>` : `<div class="thumb-empty">⌚</div>`}
       <div class="card-body">
         <h3>${p.name}</h3>
         <div class="meta">${categoryPath(p)} · Stock: ${p.stock}</div>
@@ -1038,7 +1053,7 @@ function renderBulkReview(){
 
   list.innerHTML = bulkDrafts.map((d, i) => `
     <div class="bulk-row">
-      <img src="${d.thumb}"/>
+      <img src="${d.thumb}" onclick='openLightbox("${d.thumb}")'/>
       <input type="text" value="${d.name.replace(/"/g,'&quot;')}" oninput="bulkDrafts[${i}].name=this.value"/>
       <select onchange="bulkDrafts[${i}].categoryId=this.value">
         <option value="">Sin categoría</option>
@@ -1059,6 +1074,52 @@ function removeBulkDraft(i){
 function clearBulkDrafts(){
   bulkDrafts = [];
   renderBulkReview();
+}
+
+// ───────────── LIGHTBOX (vista previa grande) ─────────────
+function openLightbox(src){
+  document.getElementById('lightboxImg').src = src;
+  document.getElementById('lightboxBg').classList.add('open');
+}
+function closeLightbox(){
+  document.getElementById('lightboxBg').classList.remove('open');
+}
+
+// ───────────── DETECCIÓN CON IA (Claude, vía función serverless) ─────────────
+async function detectAllWithAI(){
+  if (!bulkDrafts.length) return;
+  const catList = selectableCategories().map(c=>{
+    const parent = categoriesCache.find(p => p.id === c.parent_id);
+    return { slug: c.slug, name: (parent ? parent.name + ' → ' : '') + c.name };
+  });
+
+  const btn = document.getElementById('bulkAiBtn');
+  btn.disabled = true;
+
+  for (let i = 0; i < bulkDrafts.length; i++) {
+    btn.textContent = `🤖 Analizando ${i + 1}/${bulkDrafts.length}…`;
+    try {
+      const resp = await fetch('/api/detect-product', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: bulkDrafts[i].thumb, categories: catList }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Error de la IA');
+
+      if (data.category_slug) {
+        const cat = categoriesCache.find(c => c.slug === data.category_slug);
+        if (cat) { bulkDrafts[i].categoryId = cat.id; bulkDrafts[i].detected = true; }
+      }
+      if (data.name) bulkDrafts[i].name = data.name;
+    } catch (e) {
+      console.error('Detección IA falló para item', i, e);
+    }
+    renderBulkReview();
+  }
+
+  btn.disabled = false;
+  btn.textContent = '🤖 Detectar con IA (nombre + categoría)';
 }
 
 // Sinónimos para reconocer la categoría en texto (nombre de archivo o página de PDF).
