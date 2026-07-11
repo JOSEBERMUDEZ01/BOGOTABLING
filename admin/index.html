@@ -208,6 +208,25 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
 .bulk-log .ok{color:#7ed99e}
 .bulk-log .err{color:var(--rl)}
 
+/* Filas de vista previa editable (subida masiva) */
+.bulk-row{display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 10px}
+.bulk-row img{width:44px;height:44px;object-fit:cover;border-radius:7px;flex-shrink:0;background:var(--panel)}
+.bulk-row input[type="text"]{flex:1.4;min-width:0;background:var(--panel);border:1px solid var(--line2);border-radius:7px;padding:7px 10px;color:#fff;font-size:.8rem;font-family:inherit}
+.bulk-row select{flex:1.3;min-width:0;background:var(--panel);border:1px solid var(--line2);border-radius:7px;padding:7px 8px;color:#fff;font-size:.76rem;font-family:inherit}
+.bulk-row input[type="number"]{width:100px;flex-shrink:0;background:var(--panel);border:1px solid var(--line2);border-radius:7px;padding:7px 8px;color:#fff;font-size:.8rem;font-family:inherit}
+.bulk-row .tag-detected{font-size:.62rem;font-weight:700;color:var(--gl);white-space:nowrap;flex-shrink:0}
+.bulk-row .tag-nodetected{font-size:.62rem;font-weight:700;color:var(--tx3);white-space:nowrap;flex-shrink:0}
+
+/* Selección múltiple de productos */
+.card{position:relative}
+.card .select-box{position:absolute;top:10px;left:10px;z-index:2;width:22px;height:22px;display:none;accent-color:var(--r);cursor:pointer}
+.grid.select-mode .select-box{display:block}
+.grid.select-mode .card{cursor:pointer}
+.card.selected{border-color:var(--r);box-shadow:0 0 0 2px rgba(200,16,46,.3)}
+.bulk-select-bar{display:none;align-items:center;gap:10px;background:rgba(200,16,46,.1);border:1px solid rgba(200,16,46,.35);border-radius:9px;padding:10px 14px;margin-bottom:14px}
+.bulk-select-bar.show{display:flex}
+.bulk-select-bar .sub{color:var(--tx2);font-size:.82rem;flex:1}
+
 @media (max-width:900px){
   .fab{display:flex}
   .search-input{width:100%}
@@ -276,7 +295,15 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
     <div class="view active" id="view-products">
       <div class="toolbar">
         <div class="sub" id="productCount">Cargando…</div>
-        <input type="text" class="search-input" id="productSearch" placeholder="🔍 Buscar producto…" oninput="renderProductsGrid()"/>
+        <div style="display:flex;gap:8px;flex:1;justify-content:flex-end;flex-wrap:wrap">
+          <input type="text" class="search-input" id="productSearch" placeholder="🔍 Buscar producto…" oninput="renderProductsGrid()"/>
+          <button class="btn btn-outline btn-sm" id="selectModeBtn" onclick="toggleSelectMode()">☑ Seleccionar</button>
+        </div>
+      </div>
+      <div class="bulk-select-bar" id="bulkSelectBar">
+        <span class="sub"><b id="selectedCount">0</b> seleccionado(s)</span>
+        <button class="btn btn-outline btn-sm" onclick="selectAllProducts()">Seleccionar todo</button>
+        <button class="btn btn-primary btn-sm" style="background:var(--r)" onclick="deleteSelectedProducts()">🗑 Eliminar seleccionados</button>
       </div>
       <div class="grid" id="productsGrid"><p class="empty">Cargando…</p></div>
     </div>
@@ -362,27 +389,23 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
 <div class="modal-bg" id="bulkModalBg">
   <div class="modal modal-wide">
     <h3>Subida masiva de productos</h3>
-    <p class="modal-sub">Elige cómo quieres cargar varios productos a la vez.</p>
+    <p class="modal-sub">Elige cómo quieres cargar varios productos a la vez. Vas a poder revisar y editar cada uno antes de subirlo.</p>
 
-    <div class="subnav-inner" style="padding:0 0 16px;overflow:visible">
+    <div class="subnav-inner" style="padding:0 0 16px;overflow:visible" id="bulkModeTabs">
       <button type="button" class="tab-btn active" data-bulkmode="images">🖼 Imágenes</button>
-      <button type="button" class="tab-btn" data-bulkmode="pdf">📄 PDF (categoría automática)</button>
+      <button type="button" class="tab-btn" data-bulkmode="pdf">📄 PDF</button>
     </div>
 
     <!-- MODO IMÁGENES -->
     <div class="bulk-mode" id="bulkMode-images">
       <div class="bulk-help">
-        Sube varias fotos a la vez. Se crea <b>un producto por cada foto</b>, con el nombre base que
-        escribas + un número (ej. "Reloj 1", "Reloj 2"...). Luego editas cada uno para ajustar
-        nombre, precio y foto adicional si hace falta.
+        Elige varias fotos. Por cada una se arma un producto abajo, con el nombre tomado del
+        nombre del archivo y la categoría detectada si el nombre del archivo la menciona (ej.
+        "reloj-dama-plateado.jpg" → Dama). Puedes editar nombre y categoría de cada uno antes de subir.
       </div>
       <div class="field-row">
-        <div class="field"><label>Nombre base</label><input id="bulkImgName" type="text" placeholder="Ej: Reloj"/></div>
-        <div class="field"><label>Categoría</label><select id="bulkImgCategory"></select></div>
-      </div>
-      <div class="field-row">
-        <div class="field"><label>Precio (opcional)</label><input id="bulkImgPrice" type="number" min="0" step="1000" placeholder="Déjalo vacío = Consultar"/></div>
-        <div class="field"><label>Stock inicial</label><input id="bulkImgStock" type="number" min="0" value="3"/></div>
+        <div class="field"><label>Categoría de respaldo</label><select id="bulkImgCategory"></select></div>
+        <div class="field"><label>Precio para todos (opcional)</label><input id="bulkImgPrice" type="number" min="0" step="1000" placeholder="Déjalo vacío = Consultar"/></div>
       </div>
       <div class="field">
         <label>Fotos</label>
@@ -390,26 +413,19 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
           Haz clic para elegir varias fotos
         </div>
         <input type="file" id="bulkImgInput" accept="image/*" multiple style="display:none" onchange="handleBulkImageSelect(event)"/>
-        <div class="thumbs" id="bulkImgThumbs"></div>
       </div>
     </div>
 
     <!-- MODO PDF -->
     <div class="bulk-mode" id="bulkMode-pdf" style="display:none">
       <div class="bulk-help">
-        Sube un catálogo en PDF donde <b>cada página tenga la foto de un producto</b>. Cada página se
-        convierte en un producto nuevo. El sistema <b>lee el texto de cada página</b> e intenta detectar
-        sola la categoría (si dice "Hombre", "Dama", "Oro Rosa", etc.) — te mostramos en el resultado
-        qué detectó en cada una para que lo revises. Si una página no tiene texto claro, usa la
-        categoría de respaldo que elijas abajo.
+        Sube un catálogo en PDF donde <b>cada página tenga la foto de un producto</b>. El sistema lee
+        el texto de cada página para sugerir nombre y categoría (ej. si dice "Hombre", "Dama", "Oro
+        Rosa"...). Vas a poder revisar y corregir cada uno antes de subir.
       </div>
       <div class="field-row">
-        <div class="field"><label>Nombre base</label><input id="bulkPdfName" type="text" placeholder="Ej: Reloj"/></div>
         <div class="field"><label>Categoría de respaldo</label><select id="bulkPdfCategory"></select></div>
-      </div>
-      <div class="field-row">
-        <div class="field"><label>Precio (opcional)</label><input id="bulkPdfPrice" type="number" min="0" step="1000" placeholder="Déjalo vacío = Consultar"/></div>
-        <div class="field"><label>Stock inicial</label><input id="bulkPdfStock" type="number" min="0" value="3"/></div>
+        <div class="field"><label>Precio para todos (opcional)</label><input id="bulkPdfPrice" type="number" min="0" step="1000" placeholder="Déjalo vacío = Consultar"/></div>
       </div>
       <div class="field">
         <label>Archivo PDF</label>
@@ -421,7 +437,16 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
       </div>
     </div>
 
-    <div class="field" style="display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:12px 14px;margin-top:4px">
+    <!-- VISTA PREVIA EDITABLE -->
+    <div id="bulkReviewWrap" style="display:none;margin-top:18px">
+      <div class="toolbar" style="margin-bottom:10px">
+        <div class="sub"><b id="bulkReviewCount">0</b> producto(s) listos para revisar — edita lo que haga falta antes de importar</div>
+        <button class="btn btn-outline btn-xs" onclick="clearBulkDrafts()">Vaciar lista</button>
+      </div>
+      <div id="bulkReviewList" style="display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto"></div>
+    </div>
+
+    <div class="field" style="display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:12px 14px;margin-top:16px">
       <input type="checkbox" id="bulkCompress" checked style="width:16px;height:16px;flex-shrink:0"/>
       <label for="bulkCompress" style="margin:0;font-size:.8rem;color:var(--tx2);cursor:pointer">
         Comprimir imágenes automáticamente <span style="color:var(--tx3)">(recomendado — reduce el peso antes de subirlas a Storage)</span>
@@ -444,9 +469,10 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let pendingImages = [];
 let categoriesCache = [];
 let productsCache = [];
-let bulkImageFiles = [];
-let bulkPdfFile = null;
 let activeBulkMode = 'images';
+let bulkDrafts = [];
+let selectedProductIds = new Set();
+let selectModeOn = false;
 
 // ───────────── AUTH ─────────────
 async function handleLogin(){
@@ -692,7 +718,8 @@ function renderProductsGrid(){
     if (p.is_featured) badges.push('<span class="badge gold">⭐ Destacado</span>');
     if (p.is_limited_edition) badges.push('<span class="badge gold">💎 Edición limitada</span>');
     if (p.is_sold_out || p.stock === 0) badges.push('<span class="badge">Agotado</span>');
-    return `<div class="card">
+    return `<div class="card ${selectedProductIds.has(p.id)?'selected':''}" data-id="${p.id}">
+      <input type="checkbox" class="select-box" ${selectedProductIds.has(p.id)?'checked':''} onclick="event.stopPropagation();toggleProductSelected('${p.id}')"/>
       ${img ? `<img class="thumb" src="${img}" alt="${p.name}"/>` : `<div class="thumb-empty">⌚</div>`}
       <div class="card-body">
         <h3>${p.name}</h3>
@@ -707,6 +734,46 @@ function renderProductsGrid(){
       </div>
     </div>`;
   }).join('');
+}
+
+// ───────────── SELECCIÓN MÚLTIPLE / BORRADO MASIVO ─────────────
+function toggleSelectMode(){
+  selectModeOn = !selectModeOn;
+  document.getElementById('productsGrid').classList.toggle('select-mode', selectModeOn);
+  document.getElementById('selectModeBtn').textContent = selectModeOn ? '✕ Cancelar selección' : '☑ Seleccionar';
+  if (!selectModeOn) { selectedProductIds.clear(); updateSelectBar(); renderProductsGrid(); }
+}
+
+function toggleProductSelected(id){
+  if (selectedProductIds.has(id)) selectedProductIds.delete(id);
+  else selectedProductIds.add(id);
+  document.querySelector(`.card[data-id="${id}"]`)?.classList.toggle('selected', selectedProductIds.has(id));
+  updateSelectBar();
+}
+
+function selectAllProducts(){
+  const q = (document.getElementById('productSearch').value || '').toLowerCase().trim();
+  const visible = q ? productsCache.filter(p=>p.name.toLowerCase().includes(q)) : productsCache;
+  visible.forEach(p => selectedProductIds.add(p.id));
+  renderProductsGrid();
+  updateSelectBar();
+}
+
+function updateSelectBar(){
+  const count = selectedProductIds.size;
+  document.getElementById('selectedCount').textContent = count;
+  document.getElementById('bulkSelectBar').classList.toggle('show', selectModeOn && count > 0);
+}
+
+async function deleteSelectedProducts(){
+  const ids = Array.from(selectedProductIds);
+  if (!ids.length) return;
+  if (!confirm(`¿Eliminar ${ids.length} producto(s)? Esta acción no se puede deshacer.`)) return;
+  const { error } = await sb.from('products').delete().in('id', ids);
+  if (error) { alert('Error: ' + error.message); return; }
+  selectedProductIds.clear();
+  updateSelectBar();
+  loadProducts();
 }
 
 function openProductModal(){
@@ -850,19 +917,15 @@ function openBulkModal(){
   document.getElementById('bulkLog').innerHTML = '';
   document.getElementById('bulkLog').classList.remove('show');
 
-  document.getElementById('bulkImgName').value = '';
   document.getElementById('bulkImgPrice').value = '';
-  document.getElementById('bulkImgStock').value = 3;
-  document.getElementById('bulkImgThumbs').innerHTML = '';
   document.getElementById('bulkImgInput').value = '';
-  bulkImageFiles = [];
 
-  document.getElementById('bulkPdfName').value = '';
   document.getElementById('bulkPdfPrice').value = '';
-  document.getElementById('bulkPdfStock').value = 3;
   document.getElementById('bulkPdfInfo').style.display = 'none';
   document.getElementById('bulkPdfInput').value = '';
-  bulkPdfFile = null;
+
+  bulkDrafts = [];
+  renderBulkReview();
 
   switchBulkMode('images');
   openModal('bulkModalBg');
@@ -879,15 +942,45 @@ document.querySelectorAll('[data-bulkmode]').forEach(btn=>{
   btn.addEventListener('click', ()=>switchBulkMode(btn.dataset.bulkmode));
 });
 
+function guessNameFromFilename(filename){
+  const base = filename.replace(/\.[^.]+$/, '');
+  const cleaned = base.replace(/[_\-]+/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!cleaned) return '';
+  return cleaned.replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function guessNameFromPageText(text){
+  const clean = (text || '').replace(/\s+/g, ' ').trim();
+  if (!clean) return '';
+  const words = clean.split(' ').slice(0, 6).join(' ');
+  return words.length > 40 ? words.slice(0, 40) : words;
+}
+
 function handleBulkImageSelect(event){
   const files = Array.from(event.target.files);
-  bulkImageFiles = bulkImageFiles.concat(files);
-  const thumbs = document.getElementById('bulkImgThumbs');
+  const fallbackCatId = document.getElementById('bulkImgCategory').value;
+  const fallbackCat = categoriesCache.find(c => c.id === fallbackCatId);
+  const price = document.getElementById('bulkImgPrice').value;
+
   files.forEach(file=>{
+    const detected = detectCategoryFromText(file.name);
+    const cat = detected || fallbackCat;
     const reader = new FileReader();
-    reader.onload = e => { thumbs.innerHTML += `<img src="${e.target.result}"/>`; };
+    reader.onload = e => {
+      bulkDrafts.push({
+        name: guessNameFromFilename(file.name) || 'Producto',
+        categoryId: cat ? cat.id : '',
+        detected: !!detected,
+        price: price || '',
+        stock: 3,
+        thumb: e.target.result,
+        image: file,
+      });
+      renderBulkReview();
+    };
     reader.readAsDataURL(file);
   });
+  event.target.value = '';
 }
 
 function pdfWorkerReady(){
@@ -900,22 +993,76 @@ function pdfWorkerReady(){
 async function handleBulkPdfSelect(event){
   const file = event.target.files[0];
   if (!file) return;
-  bulkPdfFile = file;
   const info = document.getElementById('bulkPdfInfo');
   info.style.display = 'block';
-  info.textContent = 'Leyendo PDF…';
+  info.textContent = 'Leyendo PDF y analizando cada página…';
+
+  const fallbackCatId = document.getElementById('bulkPdfCategory').value;
+  const fallbackCat = categoriesCache.find(c => c.id === fallbackCatId);
+  const price = document.getElementById('bulkPdfPrice').value;
+
   try {
     if (!pdfWorkerReady()) throw new Error('La librería para leer PDF no cargó. Verifica tu conexión y recarga la página.');
-    const buf = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
-    info.textContent = `✔ PDF cargado: ${pdf.numPages} página${pdf.numPages===1?'':'s'} → se crearán ${pdf.numPages} producto${pdf.numPages===1?'':'s'}. La categoría de cada uno se intenta detectar sola.`;
+    const pages = await pdfToPages(file);
+    pages.forEach((page, i) => {
+      const detected = detectCategoryFromText(page.text);
+      const cat = detected || fallbackCat;
+      bulkDrafts.push({
+        name: guessNameFromPageText(page.text) || `Producto ${i + 1}`,
+        categoryId: cat ? cat.id : '',
+        detected: !!detected,
+        price: price || '',
+        stock: 3,
+        thumb: page.image,
+        image: page.image,
+      });
+    });
+    info.textContent = `✔ ${pages.length} página${pages.length===1?'':'s'} analizada${pages.length===1?'':'s'} — revisa la lista de abajo antes de importar.`;
+    renderBulkReview();
   } catch (e) {
     info.textContent = '⚠ No se pudo leer el PDF: ' + e.message;
   }
+  event.target.value = '';
 }
 
-// Sinónimos para reconocer la categoría en el texto de cada página del PDF.
-// Se agregan automáticamente los nombres reales de tus categorías (ver detectCategoryFromText).
+function renderBulkReview(){
+  const wrap = document.getElementById('bulkReviewWrap');
+  const list = document.getElementById('bulkReviewList');
+  document.getElementById('bulkReviewCount').textContent = bulkDrafts.length;
+  wrap.style.display = bulkDrafts.length ? 'block' : 'none';
+  const catOptions = selectableCategories().map(c=>{
+    const parent = categoriesCache.find(p => p.id === c.parent_id);
+    const label = (c.icon ? c.icon + ' ' : '') + (parent ? parent.name + ' → ' : '') + c.name;
+    return { id: c.id, label };
+  });
+
+  list.innerHTML = bulkDrafts.map((d, i) => `
+    <div class="bulk-row">
+      <img src="${d.thumb}"/>
+      <input type="text" value="${d.name.replace(/"/g,'&quot;')}" oninput="bulkDrafts[${i}].name=this.value"/>
+      <select onchange="bulkDrafts[${i}].categoryId=this.value">
+        <option value="">Sin categoría</option>
+        ${catOptions.map(o=>`<option value="${o.id}" ${o.id===d.categoryId?'selected':''}>${o.label}</option>`).join('')}
+      </select>
+      <input type="number" min="0" step="1000" placeholder="Consultar" value="${d.price}" oninput="bulkDrafts[${i}].price=this.value" title="Precio"/>
+      <span class="${d.detected?'tag-detected':'tag-nodetected'}">${d.detected?'✔ detectada':'sin detectar'}</span>
+      <button class="btn btn-danger-ghost btn-xs" onclick="removeBulkDraft(${i})">✕</button>
+    </div>
+  `).join('');
+}
+
+function removeBulkDraft(i){
+  bulkDrafts.splice(i, 1);
+  renderBulkReview();
+}
+
+function clearBulkDrafts(){
+  bulkDrafts = [];
+  renderBulkReview();
+}
+
+// Sinónimos para reconocer la categoría en texto (nombre de archivo o página de PDF).
+// Se comparan contra el nombre real de tus categorías (ver detectCategoryFromText).
 const CATEGORY_SYNONYMS = {
   'hombre': ['hombre', 'caballero', 'masculino', 'men'],
   'dama': ['dama', 'mujer', 'femenino', 'women', 'ella'],
@@ -1011,60 +1158,23 @@ function bulkLog(msg, cls){
 }
 
 async function runBulkImport(){
-  let items = [];
+  if (!bulkDrafts.length) { alert('Agrega fotos o un PDF primero — vas a poder revisarlos antes de importar.'); return; }
 
-  if (activeBulkMode === 'images') {
-    if (!bulkImageFiles.length) { alert('Elige al menos una foto.'); return; }
-    const catId = document.getElementById('bulkImgCategory').value;
-    const cat = categoriesCache.find(c => c.id === catId);
-    const base = document.getElementById('bulkImgName').value.trim() || 'Producto';
-    const price = document.getElementById('bulkImgPrice').value;
-    const stock = Number(document.getElementById('bulkImgStock').value) || 0;
-    items = bulkImageFiles.map((file, i) => ({
-      name: `${base} ${i + 1}`,
+  const items = bulkDrafts.map(d => {
+    const cat = categoriesCache.find(c => c.id === d.categoryId);
+    return {
+      name: d.name.trim() || 'Producto',
       description: '',
       category_slug: cat ? cat.slug : null,
-      price_current: price ? Number(price) : undefined,
-      stock,
-      image: file,
-    }));
-  }
-
-  else if (activeBulkMode === 'pdf') {
-    if (!bulkPdfFile) { alert('Elige un archivo PDF.'); return; }
-    const fallbackCatId = document.getElementById('bulkPdfCategory').value;
-    const fallbackCat = categoriesCache.find(c => c.id === fallbackCatId);
-    const base = document.getElementById('bulkPdfName').value.trim() || 'Producto';
-    const price = document.getElementById('bulkPdfPrice').value;
-    const stock = Number(document.getElementById('bulkPdfStock').value) || 0;
-
-    const btn = document.getElementById('bulkRunBtn');
-    btn.disabled = true; btn.textContent = 'Leyendo PDF…';
-    let pages;
-    try {
-      pages = await pdfToPages(bulkPdfFile);
-    } catch (e) {
-      alert('No se pudo leer el PDF: ' + e.message);
-      btn.disabled = false; btn.textContent = 'Importar productos';
-      return;
-    }
-    items = pages.map((page, i) => {
-      const detected = detectCategoryFromText(page.text);
-      const cat = detected || fallbackCat;
-      return {
-        name: `${base} ${i + 1}`,
-        description: '',
-        category_slug: cat ? cat.slug : null,
-        price_current: price ? Number(price) : undefined,
-        stock,
-        image: page.image,
-        _categoryLabel: cat ? (cat.icon ? cat.icon + ' ' : '') + cat.name : 'sin categoría',
-        _detected: !!detected,
-      };
-    });
-  }
+      price_current: d.price ? Number(d.price) : undefined,
+      stock: Number(d.stock) || 0,
+      image: d.image,
+    };
+  });
 
   await processBulkItems(items);
+  bulkDrafts = [];
+  renderBulkReview();
 }
 
 // Procesa una lista de productos {name, description, category_slug, price_current, price_previous,
