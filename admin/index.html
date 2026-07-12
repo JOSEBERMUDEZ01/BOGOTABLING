@@ -613,7 +613,7 @@ async function loadCategories(){
   categoriesCache = data || [];
   renderCategoryTree();
   renderCategorySelects();
-  document.getElementById('cntCategories').textContent = categoriesCache.length;
+  document.getElementById('cntCategories').textContent = categoriesCache.length.toLocaleString('es-CO');
 }
 
 function renderCategoryTree(){
@@ -758,7 +758,7 @@ async function moveCategory(id, dir){
 async function loadProducts(){
   const { data } = await sb.from('products').select('*, categories(name, icon, parent_id), product_images(image_url)').order('created_at', { ascending: false });
   productsCache = data || [];
-  document.getElementById('cntProducts').textContent = productsCache.length;
+  document.getElementById('cntProducts').textContent = productsCache.length.toLocaleString('es-CO');
   renderProductsGrid();
 }
 
@@ -793,7 +793,7 @@ function renderProductsGrid(){
       ${img ? `<img class="thumb" src="${img}" alt="${p.name}" onclick='event.stopPropagation();openLightbox("${img}")'/>` : `<div class="thumb-empty">⌚</div>`}
       <div class="card-body">
         <h3>${p.name}</h3>
-        <div class="meta">${categoryPath(p)} · Stock: ${p.stock}</div>
+        <div class="meta">${categoryPath(p)} · Stock: ${Number(p.stock).toLocaleString('es-CO')}</div>
         <div class="price">$${Number(p.price_current).toLocaleString('es-CO')}</div>
         ${p.description ? `<div class="desc">${p.description}</div>` : ''}
         <div class="badges">${badges.join('')}</div>
