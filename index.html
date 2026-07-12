@@ -29,6 +29,13 @@
 <meta name="twitter:image" content="https://bogotabling.vercel.app/og-image.png"/>
 
 <link rel="preconnect" href="https://cdn.jsdelivr.net"/>
+
+<!-- Vercel Analytics — se activa solo al desplegar en Vercel, no necesita cuenta externa.
+     Debes habilitarlo una vez en: tu proyecto en vercel.com → pestaña "Analytics" → Enable -->
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
 <link rel="dns-prefetch" href="https://cdn.jsdelivr.net"/>
 
 <title>Bogotá Bling — Relojes y Joyería de Lujo</title>
@@ -58,6 +65,40 @@
   "sameAs":[
     "https://wa.me/573177810009",
     "https://www.tiktok.com/@bogotablingoficial"
+  ]
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context":"https://schema.org",
+  "@type":"FAQPage",
+  "mainEntity":[
+    {
+      "@type":"Question",
+      "name":"¿Hacen envíos a toda Colombia?",
+      "acceptedAnswer":{"@type":"Answer","text":"Sí, hacemos envíos a todo el país en 24–48 horas, con embalaje premium y seguro."}
+    },
+    {
+      "@type":"Question",
+      "name":"¿Cómo hago un pedido?",
+      "acceptedAnswer":{"@type":"Answer","text":"Escribiendo directo por WhatsApp. Un asesor atiende de inmediato y ayuda a elegir la pieza."}
+    },
+    {
+      "@type":"Question",
+      "name":"¿Qué métodos de pago aceptan?",
+      "acceptedAnswer":{"@type":"Answer","text":"Nequi, Daviplata, transferencia bancaria, y contraentrega en Bogotá."}
+    },
+    {
+      "@type":"Question",
+      "name":"¿Los productos tienen garantía?",
+      "acceptedAnswer":{"@type":"Answer","text":"Sí, todos los productos cuentan con autenticidad garantizada y soporte post-venta."}
+    },
+    {
+      "@type":"Question",
+      "name":"¿Cuál es su horario de atención?",
+      "acceptedAnswer":{"@type":"Answer","text":"Lunes a sábado de 8:00 a.m. a 8:00 p.m."}
+    }
   ]
 }
 </script>
@@ -96,6 +137,10 @@ img{display:block;max-width:100%}
 .tag-r{background:var(--r);color:#fff}
 .tag-g{background:linear-gradient(135deg,var(--gd),var(--g));color:#fff}
 .tag-new{background:#0ea5e9;color:#fff}
+.tag-low{background:var(--rd);color:#fff}
+.tag-out{background:#555;color:#fff}
+.pc.is-out{opacity:.6}
+.pc.is-out .pc-img{filter:grayscale(.4)}
 .reveal{opacity:0;transform:translateY(16px);transition:opacity .5s ease,transform .5s ease}
 .reveal.in{opacity:1;transform:none}
 
@@ -241,6 +286,16 @@ body.has-promo .hero{padding-top:126px}
 .bc-icon{width:50px;height:50px;border-radius:50%;background:rgba(200,16,46,.07);border:2px solid rgba(200,16,46,.14);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;color:var(--r)}
 .bc h3{font-size:.95rem;font-weight:800;color:var(--k);margin-bottom:7px}
 .bc p{font-size:.82rem;color:var(--k3);line-height:1.7}
+
+/* ── FAQ ── */
+.faq-list{display:flex;flex-direction:column;gap:12px}
+.faq-item{background:#fff;border:1px solid var(--s2);border-radius:var(--radius);padding:4px 22px;transition:border-color var(--t)}
+.faq-item[open]{border-color:rgba(200,16,46,.25)}
+.faq-item summary{list-style:none;cursor:pointer;padding:18px 26px 18px 0;font-weight:700;font-size:.95rem;color:var(--k);position:relative;display:flex;align-items:center}
+.faq-item summary::-webkit-details-marker{display:none}
+.faq-item summary::after{content:'+';position:absolute;right:0;top:50%;transform:translateY(-50%);font-size:1.3rem;color:var(--r);font-weight:400;transition:transform var(--t)}
+.faq-item[open] summary::after{transform:translateY(-50%) rotate(45deg)}
+.faq-item p{font-size:.86rem;color:var(--k3);line-height:1.7;padding:0 0 20px}
 
 /* ── CONTACT ── */
 .contact{background:linear-gradient(135deg,var(--rd) 0%,var(--r) 50%,var(--rl) 100%);padding:72px 0;position:relative;overflow:hidden}
@@ -508,9 +563,9 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{
           <a href="#catalogo" class="btn btn-out">Ver catálogo</a>
         </div>
         <div class="stats">
-          <div><span class="stat-n">30+</span><span class="stat-l">Productos</span></div>
+          <div><span class="stat-n" id="statProductCount">—</span><span class="stat-l">Productos</span></div>
           <div class="stat-sep"></div>
-          <div><span class="stat-n">2</span><span class="stat-l">Categorías</span></div>
+          <div><span class="stat-n" id="statCategoryCount">—</span><span class="stat-l">Categorías</span></div>
           <div class="stat-sep"></div>
           <div><span class="stat-n">24h</span><span class="stat-l">Envío</span></div>
         </div>
@@ -589,6 +644,40 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{
       <div class="bc reveal"><div class="bc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><h3>Asesor Dedicado</h3><p>Respuesta inmediata por WhatsApp. Sin bots, sin esperas.</p></div>
       <div class="bc reveal"><div class="bc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg></div><h3>Garantía Incluida</h3><p>Autenticidad garantizada y soporte post-venta en todos los productos.</p></div>
       <div class="bc reveal"><div class="bc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div><h3>Pagos Seguros</h3><p>Nequi, Daviplata, transferencia y contraentrega en Bogotá.</p></div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<!-- PREGUNTAS FRECUENTES -->
+<section class="section" id="faq">
+  <div class="container" style="max-width:820px">
+    <div class="sec-head">
+      <p class="sec-eye">Resolvemos tus dudas</p>
+      <h2 class="sec-h2">Preguntas frecuentes</h2>
+    </div>
+    <div class="faq-list">
+      <details class="faq-item">
+        <summary>¿Hacen envíos a toda Colombia?</summary>
+        <p>Sí, hacemos envíos a todo el país en 24–48 horas, con embalaje premium y seguro.</p>
+      </details>
+      <details class="faq-item">
+        <summary>¿Cómo hago un pedido?</summary>
+        <p>Escríbenos directo por WhatsApp — un asesor te atiende de inmediato, sin bots ni esperas, y te ayuda a elegir la pieza perfecta.</p>
+      </details>
+      <details class="faq-item">
+        <summary>¿Qué métodos de pago aceptan?</summary>
+        <p>Nequi, Daviplata, transferencia bancaria, y contraentrega en Bogotá.</p>
+      </details>
+      <details class="faq-item">
+        <summary>¿Los productos tienen garantía?</summary>
+        <p>Sí, todos nuestros productos cuentan con autenticidad garantizada y soporte post-venta.</p>
+      </details>
+      <details class="faq-item">
+        <summary>¿Cuál es su horario de atención?</summary>
+        <p>Lunes a sábado de 8:00 a.m. a 8:00 p.m.</p>
+      </details>
     </div>
   </div>
 </section>
@@ -713,6 +802,40 @@ let CL2=[],CI=0;
 
 function money(n){ return (typeof n==='number' && n>0) ? ('$'+n.toLocaleString('es-CO')) : 'Consultar'; }
 
+// Genera datos estructurados (schema.org Product) por cada producto, para que
+// Google pueda mostrar precio/disponibilidad directo en los resultados de búsqueda.
+function injectProductSchema(products){
+  const items = products.filter(p => !p.is_sold_out).slice(0, 60).map(p=>({
+    "@type":"Product",
+    "name": p.name,
+    "description": p.description || undefined,
+    "image": p.product_images && p.product_images[0] ? p.product_images[0].image_url : undefined,
+    "url": "https://bogotabling.vercel.app/",
+    "brand": { "@type":"Brand", "name":"Bogotá Bling" },
+    "offers": Number(p.price_current) > 0 ? {
+      "@type":"Offer",
+      "priceCurrency":"COP",
+      "price": Number(p.price_current),
+      "availability": p.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      "url": "https://bogotabling.vercel.app/",
+    } : undefined,
+  }));
+  if (!items.length) return;
+
+  let el = document.getElementById('productSchema');
+  if (!el) {
+    el = document.createElement('script');
+    el.type = 'application/ld+json';
+    el.id = 'productSchema';
+    document.head.appendChild(el);
+  }
+  el.textContent = JSON.stringify({
+    "@context":"https://schema.org",
+    "@type":"ItemList",
+    "itemListElement": items.map((p, i) => ({ "@type":"ListItem", "position": i + 1, "item": p })),
+  });
+}
+
 // Construye UNA sección por categoría raíz (ej: "Relojes"), con bloques internos
 // por cada subcategoría que tenga productos (ej: Hombre, Dama). Si la raíz no tiene
 // subcategorías, se muestra un solo grid sin encabezados internos.
@@ -758,9 +881,13 @@ async function loadCatalog(){
     d: p.description || '',
     ft: !!p.is_featured,
     nv: !!p.is_new,
+    stock: p.stock ?? null,
+    so: !!p.is_sold_out,
   }));
 
   P.forEach(p=>{ (BC[p.c]=BC[p.c]||[]).push(p); });
+
+  injectProductSchema(products || []);
 
   const childrenOf = pid => cats.filter(c=>c.parent_id===pid);
   const roots = cats.filter(c=>!c.parent_id);
@@ -774,6 +901,11 @@ async function loadCatalog(){
       : ((BC[root.slug]||[]).length>0 ? [root] : []);
     return { root, groups };
   }).filter(rg=>rg.groups.length>0);
+
+  const statProductEl = document.getElementById('statProductCount');
+  const statCategoryEl = document.getElementById('statCategoryCount');
+  if (statProductEl) statProductEl.textContent = P.length.toLocaleString('es-CO') + (P.length > 0 ? '+' : '');
+  if (statCategoryEl) statCategoryEl.textContent = rootGroups.length;
 
   // Insertar secciones dentro de #catalogo (entre Destacados y Novedades)
   const catalogoDiv = document.getElementById('catalogo');
@@ -906,13 +1038,15 @@ function rGrid(list,gid){
   if(!g||g._r)return;g._r=true;
   if(!list||!list.length){g.innerHTML='<p style="color:#999;text-align:center;padding:32px;grid-column:1/-1">No hay productos.</p>';return;}
   g.innerHTML=list.map((p,i)=>{
-    const badge=p.nv?'<span class="tag tag-new">Nuevo</span>':p.ft?'<span class="tag tag-g">Destacado</span>':'';
+    let badge = p.nv ? '<span class="tag tag-new">Nuevo</span>' : p.ft ? '<span class="tag tag-g">Destacado</span>' : '';
+    if (p.so) badge = '<span class="tag tag-out">Agotado</span>';
+    else if (typeof p.stock === 'number' && p.stock > 0 && p.stock <= 2) badge += `<span class="tag tag-low">¡Últimas ${p.stock}!</span>`;
     const waT=encodeURIComponent('Hola, vi este producto en Bogotá Bling y me gustaría recibir más información. Producto: '+p.n);
-    return`<article class="pc reveal" style="transition-delay:${i*32}ms" data-gid="${gid}" data-idx="${i}" onclick="OM('${gid}',${i})">
+    return`<article class="pc reveal${p.so?' is-out':''}" style="transition-delay:${i*32}ms" data-gid="${gid}" data-idx="${i}" onclick="OM('${gid}',${i})">
 <div class="pc-img"><img src="${p.i}" alt="${p.n}" loading="lazy"/><div class="pc-tags">${badge}</div><div class="pc-hover"><span>Ver detalles</span></div></div>
 <div class="pc-body"><p class="pc-cat">${CL[p.c]||p.c}</p><h3 class="pc-name">${p.n}</h3>
 <div class="pc-foot"><span class="pc-price">${p.p}</span>
-<button class="pc-btn" onclick="event.stopPropagation();window.open('https://wa.me/${WA}?text=${waT}','_blank')">Preguntar</button>
+<button class="pc-btn" onclick="event.stopPropagation();window.open('https://wa.me/${WA}?text=${waT}','_blank')">${p.so?'Consultar':'Preguntar'}</button>
 </div></div></article>`;
   }).join('');
   g.querySelectorAll('.reveal').forEach(e=>RO.observe(e));
