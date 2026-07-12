@@ -349,8 +349,8 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
       <div class="field"><label>Stock</label><input id="productStock" type="number" min="0" value="0"/></div>
     </div>
     <div class="field-row">
-      <div class="field"><label>Precio actual</label><input id="productPrice" type="number" min="0" step="1000"/></div>
-      <div class="field"><label>Precio anterior (opcional)</label><input id="productPricePrev" type="number" min="0" step="1000"/></div>
+      <div class="field"><label>Precio actual</label><input id="productPrice" type="text" inputmode="numeric" placeholder="0" oninput="formatPriceInput(this)"/></div>
+      <div class="field"><label>Precio anterior (opcional)</label><input id="productPricePrev" type="text" inputmode="numeric" placeholder="0" oninput="formatPriceInput(this)"/></div>
     </div>
     <div class="checks">
       <label><input type="checkbox" id="productFeatured"/> ⭐ Destacado</label>
@@ -408,7 +408,7 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
     </div>
     <div class="field" style="display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:10px 14px;margin-bottom:6px">
       <input type="checkbox" id="bulkEditPriceOn" style="width:16px;height:16px;flex-shrink:0"/>
-      <input type="number" id="bulkEditPrice" placeholder="Nuevo precio para todos" style="flex:1;background:var(--panel);border:1px solid var(--line2);border-radius:7px;padding:8px 10px;color:#fff"/>
+      <input type="text" inputmode="numeric" id="bulkEditPrice" placeholder="Nuevo precio para todos" oninput="formatPriceInput(this)" style="flex:1;background:var(--panel);border:1px solid var(--line2);border-radius:7px;padding:8px 10px;color:#fff"/>
     </div>
     <div class="field" style="display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:10px 14px;margin-bottom:6px">
       <input type="checkbox" id="bulkEditStockOn" style="width:16px;height:16px;flex-shrink:0"/>
@@ -467,7 +467,7 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
       </div>
       <div class="field-row">
         <div class="field"><label>Categoría de respaldo</label><select id="bulkImgCategory"></select></div>
-        <div class="field"><label>Precio para todos (opcional)</label><input id="bulkImgPrice" type="number" min="0" step="1000" placeholder="Déjalo vacío = Consultar"/></div>
+        <div class="field"><label>Precio para todos (opcional)</label><input id="bulkImgPrice" type="text" inputmode="numeric" placeholder="Déjalo vacío = Consultar" oninput="formatPriceInput(this)"/></div>
       </div>
       <div class="field">
         <label>Fotos</label>
@@ -487,7 +487,7 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
       </div>
       <div class="field-row">
         <div class="field"><label>Categoría de respaldo</label><select id="bulkPdfCategory"></select></div>
-        <div class="field"><label>Precio para todos (opcional)</label><input id="bulkPdfPrice" type="number" min="0" step="1000" placeholder="Déjalo vacío = Consultar"/></div>
+        <div class="field"><label>Precio para todos (opcional)</label><input id="bulkPdfPrice" type="text" inputmode="numeric" placeholder="Déjalo vacío = Consultar" oninput="formatPriceInput(this)"/></div>
       </div>
       <div class="field">
         <label>Archivo PDF</label>
@@ -707,6 +707,18 @@ function editCategory(cat){
   openModal('categoryModalBg');
 }
 
+// Formatea un campo de precio mientras se escribe: quita todo lo que no sea dígito
+// y le pone el punto de mil (ej. escribes "15000" y se ve "15.000").
+function formatPriceInput(el){
+  const digits = el.value.replace(/\D/g, '');
+  el.value = digits ? Number(digits).toLocaleString('es-CO') : '';
+}
+// Convierte el valor mostrado (con puntos) de vuelta a número plano para guardar.
+function parsePriceInput(value){
+  const digits = String(value || '').replace(/\D/g, '');
+  return digits ? Number(digits) : null;
+}
+
 function slugify(name){
   return name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-');
 }
@@ -870,7 +882,7 @@ async function applyBulkEdit(){
 
   const payload = {};
   if (document.getElementById('bulkEditCatOn').checked) payload.category_id = document.getElementById('bulkEditCat').value || null;
-  if (document.getElementById('bulkEditPriceOn').checked) payload.price_current = Number(document.getElementById('bulkEditPrice').value) || 0;
+  if (document.getElementById('bulkEditPriceOn').checked) payload.price_current = parsePriceInput(document.getElementById('bulkEditPrice').value) || 0;
   if (document.getElementById('bulkEditStockOn').checked) payload.stock = Number(document.getElementById('bulkEditStock').value) || 0;
   if (document.getElementById('bulkEditFeaturedOn').checked) payload.is_featured = true;
   if (document.getElementById('bulkEditOfferOn').checked) payload.is_offer = true;
@@ -945,8 +957,8 @@ function editProduct(p){
   document.getElementById('productDesc').value = p.description || '';
   document.getElementById('productCategory').value = p.category_id || '';
   document.getElementById('productStock').value = p.stock;
-  document.getElementById('productPrice').value = p.price_current;
-  document.getElementById('productPricePrev').value = p.price_previous || '';
+  document.getElementById('productPrice').value = Number(p.price_current).toLocaleString('es-CO');
+  document.getElementById('productPricePrev').value = p.price_previous ? Number(p.price_previous).toLocaleString('es-CO') : '';
   document.getElementById('productFeatured').checked = p.is_featured;
   document.getElementById('productNew').checked = p.is_new;
   document.getElementById('productOffer').checked = p.is_offer;
@@ -1005,8 +1017,8 @@ async function saveProduct(){
   if (!name) { alert('El nombre es obligatorio.'); return; }
   const slug = slugify(name) + '-' + Date.now().toString(36);
 
-  const priceCurrent = Number(document.getElementById('productPrice').value) || 0;
-  const pricePrevious = Number(document.getElementById('productPricePrev').value) || null;
+  const priceCurrent = parsePriceInput(document.getElementById('productPrice').value) || 0;
+  const pricePrevious = parsePriceInput(document.getElementById('productPricePrev').value);
   const discountPercent = pricePrevious && pricePrevious > priceCurrent
     ? Math.round((1 - priceCurrent / pricePrevious) * 100)
     : null;
@@ -1102,7 +1114,7 @@ function handleBulkImageSelect(event){
   const files = Array.from(event.target.files);
   const fallbackCatId = document.getElementById('bulkImgCategory').value;
   const fallbackCat = categoriesCache.find(c => c.id === fallbackCatId);
-  const price = document.getElementById('bulkImgPrice').value;
+  const price = parsePriceInput(document.getElementById('bulkImgPrice').value);
 
   files.forEach(file=>{
     const detected = detectCategoryFromText(file.name);
@@ -1141,7 +1153,7 @@ async function handleBulkPdfSelect(event){
 
   const fallbackCatId = document.getElementById('bulkPdfCategory').value;
   const fallbackCat = categoriesCache.find(c => c.id === fallbackCatId);
-  const price = document.getElementById('bulkPdfPrice').value;
+  const price = parsePriceInput(document.getElementById('bulkPdfPrice').value);
 
   try {
     if (!pdfWorkerReady()) throw new Error('La librería para leer PDF no cargó. Verifica tu conexión y recarga la página.');
@@ -1186,7 +1198,7 @@ function renderBulkReview(){
         <option value="">Sin categoría</option>
         ${catOptions.map(o=>`<option value="${o.id}" ${o.id===d.categoryId?'selected':''}>${o.label}</option>`).join('')}
       </select>
-      <input type="number" min="0" step="1000" placeholder="Consultar" value="${d.price}" oninput="bulkDrafts[${i}].price=this.value" title="Precio"/>
+      <input type="text" inputmode="numeric" placeholder="Consultar" value="${d.price ? Number(d.price).toLocaleString('es-CO') : ''}" oninput="formatPriceInput(this);bulkDrafts[${i}].price=parsePriceInput(this.value)" title="Precio"/>
       <span class="${d.detected?'tag-detected':'tag-nodetected'}">${d.detected?'✔ detectada':'sin detectar'}</span>
       <button class="btn btn-danger-ghost btn-xs" onclick="removeBulkDraft(${i})">✕</button>
     </div>
