@@ -287,6 +287,36 @@ body.has-promo .hero{padding-top:126px}
 .bc h3{font-size:.95rem;font-weight:800;color:var(--k);margin-bottom:7px}
 .bc p{font-size:.82rem;color:var(--k3);line-height:1.7}
 
+/* ── RESEÑAS ── */
+.reviews-summary{display:flex;align-items:center;gap:18px;justify-content:center;margin-bottom:36px;flex-wrap:wrap}
+.reviews-summary .rs-num{font-size:2.6rem;font-weight:900;color:var(--k)}
+.reviews-summary .rs-stars{color:var(--g);font-size:1.3rem;letter-spacing:2px}
+.reviews-summary .rs-count{font-size:.82rem;color:var(--k3)}
+.reviews-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-bottom:28px}
+.review-card{background:#fff;border:1px solid var(--s2);border-radius:var(--radius);padding:20px}
+.review-card .rc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.review-card .rc-name{font-weight:800;font-size:.9rem;color:var(--k)}
+.review-card .rc-stars{color:var(--g);font-size:.85rem;letter-spacing:1px}
+.review-card .rc-date{font-size:.7rem;color:var(--k3);margin-bottom:10px}
+.review-card .rc-comment{font-size:.85rem;color:var(--k2);line-height:1.6}
+.review-card .rc-photo{margin-top:12px;width:100%;height:140px;object-fit:cover;border-radius:9px;cursor:zoom-in}
+.review-card .rc-del{background:none;border:none;color:var(--k3);font-size:.7rem;cursor:pointer;margin-top:10px}
+.review-card .rc-del:hover{color:var(--r)}
+.rc-own-actions{display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:10px;border-top:1px dashed var(--s2)}
+.rc-own-actions button{background:none;border:none;color:var(--r);font-size:.76rem;font-weight:700;cursor:pointer;padding:0}
+.rc-own-actions span{color:var(--s3)}
+
+.review-form-wrap{text-align:center}
+.review-form{max-width:520px;margin:20px auto 0;text-align:left;background:#fff;border:1px solid var(--s2);border-radius:var(--radius);padding:24px}
+.rf-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.review-form input[type="text"]{flex:1;min-width:160px;padding:11px 14px;border:1.5px solid var(--s3);border-radius:9px;font-size:.88rem;font-family:inherit}
+.review-form textarea{width:100%;min-height:90px;padding:12px 14px;border:1.5px solid var(--s3);border-radius:9px;font-size:.88rem;font-family:inherit;resize:vertical;margin-bottom:14px}
+.rf-stars{display:flex;gap:2px;font-size:1.5rem;color:var(--s3);cursor:pointer}
+.rf-stars span{transition:color var(--t)}
+.rf-stars span.on{color:var(--g)}
+.rf-photo-btn{font-size:.82rem;color:var(--r);font-weight:700;cursor:pointer}
+.rf-actions{text-align:center;margin-top:6px}
+
 /* ── FAQ ── */
 .faq-list{display:flex;flex-direction:column;gap:12px}
 .faq-item{background:#fff;border:1px solid var(--s2);border-radius:var(--radius);padding:4px 22px;transition:border-color var(--t)}
@@ -354,8 +384,20 @@ body.has-promo .hero{padding-top:126px}
 .modal-viewer{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;align-items:center;background:#000;scroll-behavior:smooth}
 .modal-viewer::-webkit-scrollbar{width:3px}
 .modal-viewer::-webkit-scrollbar-thumb{background:rgba(200,16,46,.5);border-radius:2px}
-.modal-img-wrap{width:100%;display:flex;align-items:flex-start;justify-content:center;padding:0}
-.modal-img{width:100%;max-width:100%;height:auto;display:block;object-fit:contain;animation:mIn .3s ease}
+.modal-img-wrap{width:100%;display:flex;align-items:flex-start;justify-content:center;padding:0;position:relative;cursor:grab;touch-action:pan-y;user-select:none}
+.modal-img-wrap.dragging{cursor:grabbing}
+.modal-img{width:100%;max-width:100%;height:auto;display:block;object-fit:contain;animation:mIn .3s ease;pointer-events:none}
+.mimg-arrow{position:absolute;top:50%;transform:translateY(-50%);width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.92);border:1px solid var(--s2);color:var(--k);font-size:1.4rem;display:none;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.15);z-index:2}
+.modal-img-wrap.has-multi .mimg-arrow{display:flex}
+.mimg-arrow-l{left:12px}
+.mimg-arrow-r{right:12px}
+.mimg-hint{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);color:#fff;font-size:.72rem;font-weight:600;padding:6px 14px;border-radius:20px;display:none;pointer-events:none;transition:opacity .3s ease;letter-spacing:.02em}
+.modal-img-wrap.has-multi .mimg-hint{display:block}
+.mimg-hint.hide{opacity:0}
+.mimg-dots{position:absolute;top:12px;left:50%;transform:translateX(-50%);display:none;gap:5px;z-index:2}
+.modal-img-wrap.has-multi .mimg-dots{display:flex}
+.mimg-dots .mdot{width:6px;height:6px;border-radius:50%;background:rgba(0,0,0,.2);transition:background var(--t),transform var(--t)}
+.mimg-dots .mdot.on{background:var(--r);transform:scale(1.3)}
 .modal-img-tag{display:none}
 /* Info panel below image */
 .modal-body{width:100%;background:#111;padding:20px 20px 12px;border-top:2px solid rgba(200,16,46,.3)}
@@ -520,6 +562,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{
         </div>
       </div>
       <a class="nav-a" href="#novedades">✨ Novedades</a>
+      <a class="nav-a" href="#resenas">⭐ Reseñas</a>
       <a class="nav-a" href="#beneficios">💎 Nosotros</a>
       <a class="nav-a" href="#contacto">📲 Contacto</a>
     </div>
@@ -540,6 +583,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{
       </div>
     </div>
     <a href="#novedades">✨ Novedades</a>
+    <a href="#resenas">⭐ Reseñas</a>
     <a href="#beneficios">💎 Nosotros</a>
     <a href="#contacto">📲 Contacto</a>
     <a href="https://wa.me/573177810009?text=Hola%2C%20vi%20este%20producto%20en%20Bogot%C3%A1%20Bling%20y%20me%20gustar%C3%ADa%20recibir%20m%C3%A1s%20informaci%C3%B3n." target="_blank">💬 Escribir por WhatsApp</a>
@@ -644,6 +688,47 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{
       <div class="bc reveal"><div class="bc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><h3>Asesor Dedicado</h3><p>Respuesta inmediata por WhatsApp. Sin bots, sin esperas.</p></div>
       <div class="bc reveal"><div class="bc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg></div><h3>Garantía Incluida</h3><p>Autenticidad garantizada y soporte post-venta en todos los productos.</p></div>
       <div class="bc reveal"><div class="bc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div><h3>Pagos Seguros</h3><p>Nequi, Daviplata, transferencia y contraentrega en Bogotá.</p></div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<!-- PREGUNTAS FRECUENTES -->
+<hr class="divider"/>
+
+<!-- RESEÑAS DE CLIENTES -->
+<section class="section sec-bg" id="resenas">
+  <div class="container" style="max-width:900px">
+    <div class="sec-head">
+      <p class="sec-eye">Lo que dicen de nosotros</p>
+      <h2 class="sec-h2">Reseñas de clientes</h2>
+    </div>
+
+    <div id="reviewsSummary" class="reviews-summary"></div>
+
+    <div id="reviewsList" class="reviews-list"><p style="color:var(--k3);font-size:.85rem">Cargando reseñas…</p></div>
+
+    <div class="review-form-wrap">
+      <button class="btn btn-out" id="reviewFormToggle" onclick="toggleReviewForm()">✍️ Escribir una reseña</button>
+      <form id="reviewForm" class="review-form" style="display:none" onsubmit="submitReview(event)">
+        <div class="rf-row">
+          <input type="text" id="rfName" placeholder="Tu nombre" maxlength="80" required/>
+          <div class="rf-stars" id="rfStars">
+            <span data-v="1">★</span><span data-v="2">★</span><span data-v="3">★</span><span data-v="4">★</span><span data-v="5">★</span>
+          </div>
+        </div>
+        <textarea id="rfComment" placeholder="Cuéntanos tu experiencia con Bogotá Bling…" maxlength="600" required></textarea>
+        <div class="rf-row">
+          <label class="rf-photo-btn" for="rfPhoto">📷 Agregar foto (opcional)<input type="file" id="rfPhoto" accept="image/*" style="display:none" onchange="handleReviewPhoto(event)"/></label>
+          <span id="rfPhotoName" style="font-size:.78rem;color:var(--k3)"></span>
+        </div>
+        <div class="rf-actions">
+          <button type="submit" class="btn btn-r" id="rfSubmitBtn">Publicar reseña</button>
+          <button type="button" class="btn btn-out" onclick="toggleReviewForm()" style="margin-left:8px">Cancelar</button>
+        </div>
+        <p id="rfError" style="color:var(--r);font-size:.8rem;display:none"></p>
+      </form>
     </div>
   </div>
 </section>
@@ -760,8 +845,12 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{
   </div>
   <!-- Área scrolleable con imagen full -->
   <div class="modal-viewer" id="mViewer">
-    <div class="modal-img-wrap">
-      <img class="modal-img" id="mImg" src="" alt="" loading="eager"/>
+    <div class="modal-img-wrap" id="mImgWrap">
+      <img class="modal-img" id="mImg" src="" alt="" loading="eager" draggable="false"/>
+      <button class="mimg-arrow mimg-arrow-l" id="mImgPrevBtn" aria-label="Foto anterior">‹</button>
+      <button class="mimg-arrow mimg-arrow-r" id="mImgNextBtn" aria-label="Foto siguiente">›</button>
+      <div class="mimg-hint" id="mImgHint">↔ Arrastra para girar</div>
+      <div class="mimg-dots" id="mImgDots"></div>
     </div>
     <!-- Info debajo de la imagen -->
     <div class="modal-body">
@@ -878,6 +967,7 @@ async function loadCatalog(){
     c: p.categories ? p.categories.slug : '',
     p: money(Number(p.price_current)),
     i: p.product_images && p.product_images[0] ? p.product_images[0].image_url : '',
+    imgs: (p.product_images || []).map(img => img.image_url),
     d: p.description || '',
     ft: !!p.is_featured,
     nv: !!p.is_new,
@@ -1055,7 +1145,7 @@ function rGrid(list,gid){
 function OM(gid,idx){CL2=GR[gid]||[];CI=idx;SM(CL2[idx]);}
 function SM(p){
   const waT=encodeURIComponent('Hola, vi este producto en Bogotá Bling y me gustaría recibir más información. Producto: '+p.n);
-  document.getElementById('mImg').src=p.i;
+  setupRotation(p.imgs && p.imgs.length ? p.imgs : (p.i ? [p.i] : []));
   document.getElementById('mImg').alt=p.n;
   document.getElementById('mCat').textContent=CL[p.c]||p.c;
   document.getElementById('mName').textContent=p.n;
@@ -1071,6 +1161,72 @@ function SM(p){
   document.body.style.overflow='hidden';
 }
 function CM(){document.getElementById('mBg').classList.remove('open');document.body.style.overflow='';}
+
+// ───────── GALERÍA / ROTACIÓN DE FOTOS (estilo 360°) ─────────
+// Con 1 sola foto no hay nada que rotar. Entre más fotos en distintos ángulos
+// suba el negocio para un producto, más fluido se siente el "giro" al arrastrar
+// — esto recicla las fotos que ya existan, no genera un modelo 3D real.
+let rotFrames = [];
+let rotIndex = 0;
+let rotDragging = false;
+let rotStartX = 0;
+let rotStartIndex = 0;
+
+function setupRotation(images){
+  rotFrames = images && images.length ? images : [''];
+  rotIndex = 0;
+  const wrap = document.getElementById('mImgWrap');
+  wrap.classList.toggle('has-multi', rotFrames.length > 1);
+  document.getElementById('mImgHint').classList.remove('hide');
+  renderRotFrame();
+  renderRotDots();
+}
+function renderRotFrame(){
+  document.getElementById('mImg').src = rotFrames[rotIndex] || '';
+}
+function renderRotDots(){
+  const dotsEl = document.getElementById('mImgDots');
+  dotsEl.innerHTML = rotFrames.length > 1
+    ? rotFrames.map((_,i)=>`<span class="mdot ${i===rotIndex?'on':''}"></span>`).join('')
+    : '';
+}
+function rotGoTo(i){
+  if (!rotFrames.length) return;
+  rotIndex = ((i % rotFrames.length) + rotFrames.length) % rotFrames.length;
+  renderRotFrame();
+  renderRotDots();
+}
+
+(function initRotationDrag(){
+  const wrap = document.getElementById('mImgWrap');
+  const hint = document.getElementById('mImgHint');
+  const STEP = 26; // px de arrastre por cada foto que avanza
+
+  const dismissHint = () => hint.classList.add('hide');
+
+  wrap.addEventListener('pointerdown', e=>{
+    if (rotFrames.length <= 1) return;
+    rotDragging = true;
+    rotStartX = e.clientX;
+    rotStartIndex = rotIndex;
+    wrap.classList.add('dragging');
+    wrap.setPointerCapture(e.pointerId);
+  });
+  wrap.addEventListener('pointermove', e=>{
+    if (!rotDragging) return;
+    dismissHint();
+    const dx = e.clientX - rotStartX;
+    const framesMoved = Math.trunc(dx / STEP);
+    rotGoTo(rotStartIndex - framesMoved);
+  });
+  ['pointerup','pointercancel','pointerleave'].forEach(evt=>{
+    wrap.addEventListener(evt, ()=>{ rotDragging = false; wrap.classList.remove('dragging'); });
+  });
+
+  document.getElementById('mImgPrevBtn').addEventListener('click', ()=>{ dismissHint(); rotGoTo(rotIndex - 1); });
+  document.getElementById('mImgNextBtn').addEventListener('click', ()=>{ dismissHint(); rotGoTo(rotIndex + 1); });
+})();
+
 document.getElementById('mBg').addEventListener('click',function(e){if(e.target===this)CM();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')CM();});
 
@@ -1099,6 +1255,7 @@ const actObs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){d
 
 // Cargar catálogo desde Supabase
 loadCatalog();
+loadReviews();
 
 // Hamburger
 const ham=document.getElementById('ham'),mob=document.getElementById('mobMenu');
@@ -1117,6 +1274,235 @@ document.querySelectorAll('a[href^="#"]').forEach(a=>{
     try{const t=document.querySelector(h);if(!t)return;e.preventDefault();window.scrollTo({top:t.getBoundingClientRect().top+scrollY-72,behavior:'smooth'});}catch(err){}
   });
 });
+
+// ───────── RESEÑAS DE CLIENTES ─────────
+let rfRating = 5;
+let rfPhotoFile = null;
+
+async function loadReviews(){
+  const { data, error } = await sb.from('reviews_public').select('*').order('created_at', { ascending: false });
+  const listEl = document.getElementById('reviewsList');
+  if (error) { listEl.innerHTML = '<p style="color:var(--k3);font-size:.85rem">No se pudieron cargar las reseñas.</p>'; return; }
+
+  const reviews = data || [];
+  renderReviewsSummary(reviews);
+
+  if (!reviews.length) {
+    listEl.innerHTML = '<p style="color:var(--k3);font-size:.85rem;grid-column:1/-1;text-align:center">Sé el primero en dejar una reseña.</p>';
+    return;
+  }
+
+  const myTokens = getMyReviewTokens();
+
+  listEl.innerHTML = reviews.map(r => `
+    <div class="review-card">
+      <div class="rc-top">
+        <span class="rc-name">${escapeHtml(r.customer_name)}</span>
+        <span class="rc-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span>
+      </div>
+      <div class="rc-date">${new Date(r.created_at).toLocaleDateString('es-CO', { year:'numeric', month:'long', day:'numeric' })}</div>
+      <p class="rc-comment">${escapeHtml(r.comment)}</p>
+      ${r.image_url ? `<img class="rc-photo" src="${r.image_url}" alt="Foto de ${escapeHtml(r.customer_name)}" onclick="openLightboxReview('${r.image_url}')"/>` : ''}
+      ${myTokens[r.id] ? `
+        <div class="rc-own-actions">
+          <button onclick="startEditReview('${r.id}', ${r.rating}, ${JSON.stringify(r.comment)})">✎ Editar</button>
+          <span>·</span>
+          <button onclick="deleteOwnReview('${r.id}')">🗑 Borrar</button>
+        </div>` : ''}
+    </div>
+  `).join('');
+}
+
+// El navegador guarda un mapa {review_id: token_secreto} SOLO de las reseñas
+// que la persona escribió desde este mismo dispositivo/navegador.
+function getMyReviewTokens(){
+  try { return JSON.parse(localStorage.getItem('bblingReviewTokens') || '{}'); }
+  catch(e) { return {}; }
+}
+function saveMyReviewToken(reviewId, token){
+  const map = getMyReviewTokens();
+  map[reviewId] = token;
+  localStorage.setItem('bblingReviewTokens', JSON.stringify(map));
+}
+function forgetMyReviewToken(reviewId){
+  const map = getMyReviewTokens();
+  delete map[reviewId];
+  localStorage.setItem('bblingReviewTokens', JSON.stringify(map));
+}
+
+function renderReviewsSummary(reviews){
+  const el = document.getElementById('reviewsSummary');
+  if (!reviews.length){ el.innerHTML = ''; return; }
+  const avg = reviews.reduce((s,r)=>s+r.rating,0) / reviews.length;
+  const rounded = Math.round(avg * 10) / 10;
+  const fullStars = Math.round(avg);
+  el.innerHTML = `
+    <span class="rs-num">${rounded}</span>
+    <div>
+      <div class="rs-stars">${'★'.repeat(fullStars)}${'☆'.repeat(5-fullStars)}</div>
+      <div class="rs-count">${reviews.length} reseña${reviews.length===1?'':'s'}</div>
+    </div>`;
+}
+
+function escapeHtml(s){
+  const d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+
+function toggleReviewForm(){
+  const form = document.getElementById('reviewForm');
+  const open = form.style.display === 'none';
+  form.style.display = open ? 'block' : 'none';
+  document.getElementById('reviewFormToggle').style.display = open ? 'none' : 'inline-flex';
+  if (open) form.scrollIntoView({ behavior:'smooth', block:'center' });
+  else resetReviewForm();
+}
+
+document.querySelectorAll('#rfStars span').forEach(star=>{
+  star.addEventListener('click', ()=>{
+    rfRating = Number(star.dataset.v);
+    document.querySelectorAll('#rfStars span').forEach(s=>s.classList.toggle('on', Number(s.dataset.v) <= rfRating));
+  });
+});
+document.querySelectorAll('#rfStars span').forEach(s=>s.classList.toggle('on', Number(s.dataset.v) <= rfRating));
+
+function handleReviewPhoto(event){
+  const file = event.target.files[0];
+  rfPhotoFile = file || null;
+  document.getElementById('rfPhotoName').textContent = file ? file.name : '';
+}
+
+// Compresión ligera de la foto de reseña antes de subirla (igual que en el admin)
+function compressReviewImage(file, maxWidth = 1000, quality = 0.8){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('No se pudo procesar la imagen')), 'image/jpeg', quality);
+      };
+      img.onerror = () => reject(new Error('No se pudo leer la imagen'));
+      img.src = e.target.result;
+    };
+    reader.onerror = () => reject(new Error('No se pudo leer el archivo'));
+    reader.readAsDataURL(file);
+  });
+}
+
+let editingReviewId = null;
+
+async function submitReview(event){
+  event.preventDefault();
+  const btn = document.getElementById('rfSubmitBtn');
+  const errEl = document.getElementById('rfError');
+  errEl.style.display = 'none';
+
+  const name = document.getElementById('rfName').value.trim();
+  const comment = document.getElementById('rfComment').value.trim();
+  if (!comment || (!editingReviewId && !name)) return;
+
+  btn.disabled = true;
+  btn.textContent = editingReviewId ? 'Guardando…' : 'Publicando…';
+
+  try {
+    let imageUrl = null;
+    if (rfPhotoFile) {
+      const blob = await compressReviewImage(rfPhotoFile);
+      const path = `reviews/${Date.now()}-${Math.random().toString(36).slice(2,7)}.jpg`;
+      const { error: upErr } = await sb.storage.from('product-images').upload(path, blob);
+      if (!upErr) {
+        const { data: pub } = sb.storage.from('product-images').getPublicUrl(path);
+        imageUrl = pub.publicUrl;
+      }
+    }
+
+    if (editingReviewId) {
+      const myTokens = getMyReviewTokens();
+      const token = myTokens[editingReviewId];
+      const { data: ok, error } = await sb.rpc('update_own_review', {
+        review_id: editingReviewId,
+        token,
+        new_rating: rfRating,
+        new_comment: comment,
+        new_image_url: imageUrl,
+      });
+      if (error) throw error;
+      if (!ok) throw new Error('No se pudo editar (puede que ya no tengas permiso desde este dispositivo).');
+    } else {
+      const reviewId = crypto.randomUUID();
+      const token = crypto.randomUUID();
+      const { error } = await sb.from('reviews').insert({
+        id: reviewId,
+        customer_name: name,
+        rating: rfRating,
+        comment,
+        image_url: imageUrl,
+        edit_token: token,
+      });
+      if (error) throw error;
+      saveMyReviewToken(reviewId, token);
+    }
+
+    resetReviewForm();
+    toggleReviewForm();
+    loadReviews();
+  } catch (e) {
+    errEl.textContent = 'No se pudo guardar: ' + e.message;
+    errEl.style.display = 'block';
+  }
+
+  btn.disabled = false;
+  btn.textContent = editingReviewId ? 'Guardar cambios' : 'Publicar reseña';
+}
+
+function resetReviewForm(){
+  document.getElementById('reviewForm').reset();
+  document.getElementById('rfName').disabled = false;
+  rfPhotoFile = null;
+  document.getElementById('rfPhotoName').textContent = '';
+  rfRating = 5;
+  document.querySelectorAll('#rfStars span').forEach(s=>s.classList.toggle('on', Number(s.dataset.v) <= rfRating));
+  editingReviewId = null;
+  document.getElementById('rfSubmitBtn').textContent = 'Publicar reseña';
+}
+
+function startEditReview(id, rating, comment){
+  editingReviewId = id;
+  const form = document.getElementById('reviewForm');
+  form.style.display = 'block';
+  document.getElementById('reviewFormToggle').style.display = 'none';
+  document.getElementById('rfName').value = 'Editando tu reseña';
+  document.getElementById('rfName').disabled = true;
+  document.getElementById('rfComment').value = comment;
+  rfRating = rating;
+  document.querySelectorAll('#rfStars span').forEach(s=>s.classList.toggle('on', Number(s.dataset.v) <= rfRating));
+  document.getElementById('rfSubmitBtn').textContent = 'Guardar cambios';
+  form.scrollIntoView({ behavior:'smooth', block:'center' });
+}
+
+async function deleteOwnReview(id){
+  if (!confirm('¿Borrar tu reseña? Esta acción no se puede deshacer.')) return;
+  const myTokens = getMyReviewTokens();
+  const token = myTokens[id];
+  const { data: ok, error } = await sb.rpc('delete_own_review', { review_id: id, token });
+  if (error || !ok) { alert('No se pudo borrar (puede que ya no tengas permiso desde este dispositivo).'); return; }
+  forgetMyReviewToken(id);
+  loadReviews();
+}
+
+function openLightboxReview(src){
+  const bg = document.createElement('div');
+  bg.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:2000;display:flex;align-items:center;justify-content:center;padding:24px;cursor:zoom-out';
+  bg.innerHTML = `<img src="${src}" style="max-width:92vw;max-height:92vh;object-fit:contain;border-radius:8px"/>`;
+  bg.addEventListener('click', ()=>bg.remove());
+  document.body.appendChild(bg);
+}
 
 </script>
 </body>
