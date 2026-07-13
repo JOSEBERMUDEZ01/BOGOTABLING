@@ -139,6 +139,18 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;height:2px;backgroun
 /* ══════ CATEGORÍAS (árbol profesional) ══════ */
 .tree{display:flex;flex-direction:column;gap:10px}
 .tree-root{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-sm);transition:border-color var(--t)}
+
+/* ── Carpetas de productos por categoría (estilo Django admin) ── */
+.prod-folder{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);margin-bottom:10px;overflow:hidden}
+.prod-folder-head{list-style:none;cursor:pointer;padding:14px 18px;display:flex;align-items:center;gap:10px;font-weight:700;font-size:.9rem;background:var(--panel2);user-select:none}
+.prod-folder-head::-webkit-details-marker{display:none}
+.prod-folder-head::before{content:'▸';font-size:.75rem;color:var(--tx3);transition:transform var(--t)}
+.prod-folder[open]>.prod-folder-head::before{transform:rotate(90deg)}
+.prod-folder-count{margin-left:auto;font-size:.7rem;font-weight:700;color:var(--tx3);background:var(--panel);border:1px solid var(--line2);padding:2px 9px;border-radius:20px}
+.prod-folder-body{padding:16px}
+.prod-folder-sub{margin:0 0 10px 26px;border-color:var(--line2)}
+.prod-folder-sub:last-child{margin-bottom:0}
+.prod-folder-sub>.grid{padding:14px}
 .tree-root:hover{border-color:var(--line2)}
 .tree-root-head{display:flex;align-items:center;gap:12px;padding:15px 16px;background:var(--panel2);border-bottom:1px solid var(--line)}
 .tree-root-head .ic{font-size:1.3rem;width:30px;height:30px;text-align:center;line-height:30px;background:var(--panel);border-radius:8px;border:1px solid var(--line)}
@@ -186,7 +198,9 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(3px);z-index:500;align-items:center;justify-content:center;padding:20px}
 .modal-bg.open{display:flex;animation:modalBgIn .18s ease}
 @keyframes modalBgIn{from{opacity:0}to{opacity:1}}
-.modal{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:26px;width:100%;max-width:540px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg);animation:modalIn .22s cubic-bezier(.16,1,.3,1)}
+.modal{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:26px;width:100%;max-width:540px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg);animation:modalIn .22s cubic-bezier(.16,1,.3,1);position:relative}
+.modal-close{position:absolute;top:16px;right:16px;width:30px;height:30px;border-radius:50%;background:var(--panel2);border:1px solid var(--line2);color:var(--tx2);font-size:1rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all var(--t)}
+.modal-close:hover{background:var(--r);border-color:var(--r);color:#fff}
 @keyframes modalIn{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
 .modal.modal-wide{max-width:680px}
 .modal h3{margin-bottom:6px;font-size:1.1rem;letter-spacing:-.01em}
@@ -294,6 +308,7 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
     <div class="subnav-inner">
       <button class="tab-btn active" data-view="products">⌚ Productos <span class="cnt" id="cntProducts"></span></button>
       <button class="tab-btn" data-view="categories">🗂 Categorías <span class="cnt" id="cntCategories"></span></button>
+      <button class="tab-btn" data-view="reviews">⭐ Reseñas <span class="cnt" id="cntReviews"></span></button>
     </div>
   </div>
 
@@ -314,7 +329,7 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
         <button class="btn btn-gold btn-sm" onclick="openBulkEditModal()">✎ Editar seleccionados</button>
         <button class="btn btn-primary btn-sm" style="background:var(--r)" onclick="deleteSelectedProducts()">🗑 Eliminar seleccionados</button>
       </div>
-      <div class="grid" id="productsGrid"><p class="empty">Cargando…</p></div>
+      <div id="productsGrid"><p class="empty">Cargando…</p></div>
     </div>
 
     <!-- CATEGORÍAS -->
@@ -324,6 +339,14 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
         <button class="btn btn-primary btn-sm" onclick="openCategoryModal()">+ Nueva categoría</button>
       </div>
       <div class="tree" id="categoryTree"><p class="empty">Cargando…</p></div>
+    </div>
+
+    <!-- RESEÑAS -->
+    <div class="view" id="view-reviews">
+      <div class="toolbar">
+        <div class="sub">Reseñas escritas por clientes en el sitio — bórralas si son spam o inapropiadas</div>
+      </div>
+      <div class="grid" id="reviewsAdminGrid"><p class="empty">Cargando…</p></div>
     </div>
 
   </div>
@@ -340,6 +363,7 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
 <!-- ══════════════ MODAL: PRODUCTO ══════════════ -->
 <div class="modal-bg" id="productModalBg">
   <div class="modal">
+    <button class="modal-close" onclick="closeModal('productModalBg')">✕</button>
     <h3 id="productModalTitle">Nuevo producto</h3>
     <input type="hidden" id="productId"/>
     <div class="field"><label>Nombre</label><input id="productName" type="text"/></div>
@@ -377,6 +401,7 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
 <!-- ══════════════ MODAL: CATEGORÍA ══════════════ -->
 <div class="modal-bg" id="categoryModalBg">
   <div class="modal">
+    <button class="modal-close" onclick="closeModal('categoryModalBg')">✕</button>
     <h3 id="categoryModalTitle">Nueva categoría</h3>
     <input type="hidden" id="categoryId"/>
     <div class="field-row">
@@ -399,6 +424,7 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
 <!-- ══════════════ MODAL: EDICIÓN MASIVA ══════════════ -->
 <div class="modal-bg" id="bulkEditModalBg">
   <div class="modal">
+    <button class="modal-close" onclick="closeModal('bulkEditModalBg')">✕</button>
     <h3>Editar <span id="bulkEditCount">0</span> producto(s)</h3>
     <p class="modal-sub">Solo se cambia lo que actives o llenes abajo — deja vacío/apagado lo que no quieras tocar.</p>
 
@@ -429,6 +455,7 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
 
 <div class="modal-bg" id="promoBarModalBg">
   <div class="modal">
+    <button class="modal-close" onclick="closeModal('promoBarModalBg')">✕</button>
     <h3>Promoción del sitio</h3>
     <p class="modal-sub">Controla la franja roja que aparece arriba del todo en el sitio público. Si la apagas, no se muestra nada.</p>
     <div class="field" style="display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:12px 14px">
@@ -450,6 +477,7 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
 
 <div class="modal-bg" id="bulkModalBg">
   <div class="modal modal-wide">
+    <button class="modal-close" onclick="closeModal('bulkModalBg')">✕</button>
     <h3>Subida masiva de productos</h3>
     <p class="modal-sub">Elige cómo quieres cargar varios productos a la vez. Vas a poder revisar y editar cada uno antes de subirlo.</p>
 
@@ -527,6 +555,7 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
 
 <!-- ══════════════ LIGHTBOX: vista previa grande ══════════════ -->
 <div class="lightbox-bg" id="lightboxBg" onclick="closeLightbox()">
+  <button class="modal-close" style="position:fixed;top:20px;right:20px" onclick="event.stopPropagation();closeLightbox()">✕</button>
   <img id="lightboxImg" src="" alt="Vista previa"/>
 </div>
 
@@ -590,6 +619,7 @@ function showApp(){
   document.getElementById('app').style.display = 'block';
   loadCategories();
   loadProducts();
+  loadReviewsAdmin();
 }
 
 // ───────────── NAVEGACIÓN (pills) ─────────────
@@ -766,6 +796,39 @@ async function moveCategory(id, dir){
   loadCategories();
 }
 
+// ───────────── RESEÑAS (moderación) ─────────────
+async function loadReviewsAdmin(){
+  const { data, error } = await sb.from('reviews').select('*').order('created_at', { ascending: false });
+  const grid = document.getElementById('reviewsAdminGrid');
+  const reviews = data || [];
+  document.getElementById('cntReviews').textContent = reviews.length.toLocaleString('es-CO');
+
+  if (error) { grid.innerHTML = '<p class="empty">No se pudieron cargar las reseñas.</p>'; return; }
+  if (!reviews.length) { grid.innerHTML = '<div class="empty"><span>⭐</span>Todavía no hay reseñas de clientes.</div>'; return; }
+
+  grid.innerHTML = reviews.map(r => `
+    <div class="card">
+      ${r.image_url ? `<img class="thumb" src="${r.image_url}" alt="" onclick='openLightbox("${r.image_url}")'/>` : ''}
+      <div class="card-body">
+        <h3>${r.customer_name}</h3>
+        <div class="meta">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)} · ${new Date(r.created_at).toLocaleDateString('es-CO')}</div>
+        <div class="desc" style="-webkit-line-clamp:5">${r.comment}</div>
+        <div class="card-actions">
+          <button class="btn btn-outline btn-sm" onclick="deleteReviewAdmin('${r.id}')">🗑 Eliminar</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function deleteReviewAdmin(id){
+  if (!confirm('¿Eliminar esta reseña? Esta acción no se puede deshacer.')) return;
+  const { error } = await sb.from('reviews').delete().eq('id', id);
+  if (error) { alert('Error: ' + error.message); return; }
+  loadReviewsAdmin();
+}
+
+
 // ───────────── PRODUCTOS ─────────────
 async function loadProducts(){
   const { data } = await sb.from('products').select('*, categories(name, icon, parent_id), product_images(image_url)').order('created_at', { ascending: false });
@@ -782,25 +845,80 @@ function categoryPath(p){
 
 function renderProductsGrid(){
   const q = (document.getElementById('productSearch').value || '').toLowerCase().trim();
-  const data = q ? productsCache.filter(p=>p.name.toLowerCase().includes(q)) : productsCache;
   const grid = document.getElementById('productsGrid');
-  document.getElementById('productCount').textContent = `${productsCache.length} producto${productsCache.length===1?'':'s'} en el catálogo` + (q ? ` · ${data.length} coinciden con "${q}"` : '');
+  document.getElementById('productCount').textContent = `${productsCache.length} producto${productsCache.length===1?'':'s'} en el catálogo`;
 
   if (!productsCache.length) {
     grid.innerHTML = '<div class="empty"><span>⌚</span>No hay productos todavía. Usa "+ Nuevo producto" o "Subida masiva".</div>';
     return;
   }
-  if (!data.length) { grid.innerHTML = '<div class="empty"><span>🔍</span>Sin resultados para tu búsqueda.</div>'; return; }
 
-  grid.innerHTML = data.map(p=>{
-    const img = p.product_images?.[0]?.image_url || '';
-    const badges = [];
-    if (p.is_offer) badges.push('<span class="badge hot">🔥 Oferta</span>');
-    if (p.is_new) badges.push('<span class="badge">✨ Nuevo</span>');
-    if (p.is_featured) badges.push('<span class="badge gold">⭐ Destacado</span>');
-    if (p.is_limited_edition) badges.push('<span class="badge gold">💎 Edición limitada</span>');
-    if (p.is_sold_out || p.stock === 0) badges.push('<span class="badge">Agotado</span>');
-    return `<div class="card ${selectedProductIds.has(p.id)?'selected':''}" data-id="${p.id}">
+  // Con texto de búsqueda: lista plana filtrada (sin carpetas, más directo)
+  if (q) {
+    const data = productsCache.filter(p=>p.name.toLowerCase().includes(q));
+    document.getElementById('productCount').textContent += ` · ${data.length} coinciden con "${q}"`;
+    grid.innerHTML = data.length
+      ? `<div class="grid">${data.map(productCardHtml).join('')}</div>`
+      : '<div class="empty"><span>🔍</span>Sin resultados para tu búsqueda.</div>';
+    return;
+  }
+
+  // Sin búsqueda: agrupado en carpetas por categoría (clic para desplegar)
+  const byCategory = {};
+  const noCategory = [];
+  productsCache.forEach(p=>{
+    if (p.category_id) (byCategory[p.category_id] = byCategory[p.category_id] || []).push(p);
+    else noCategory.push(p);
+  });
+
+  const roots = categoriesCache.filter(c=>!c.parent_id);
+  const childrenOf = pid => categoriesCache.filter(c=>c.parent_id===pid);
+
+  let html = '';
+  roots.forEach(root=>{
+    const kids = childrenOf(root.id);
+    let count, body;
+    if (kids.length) {
+      body = kids.map(sub=>{
+        const items = byCategory[sub.id] || [];
+        if (!items.length) return '';
+        return `<details class="prod-folder prod-folder-sub">
+          <summary class="prod-folder-head"><span>${sub.icon || ''}</span> ${sub.name} <span class="prod-folder-count">${items.length}</span></summary>
+          <div class="grid">${items.map(productCardHtml).join('')}</div>
+        </details>`;
+      }).join('');
+      count = kids.reduce((s,sub)=>s+(byCategory[sub.id]||[]).length, 0);
+    } else {
+      const items = byCategory[root.id] || [];
+      count = items.length;
+      body = count ? `<div class="grid">${items.map(productCardHtml).join('')}</div>` : '';
+    }
+    if (!count) return;
+    html += `<details class="prod-folder">
+      <summary class="prod-folder-head"><span>${root.icon || ''}</span> ${root.name} <span class="prod-folder-count">${count}</span></summary>
+      <div class="prod-folder-body">${body}</div>
+    </details>`;
+  });
+
+  if (noCategory.length) {
+    html += `<details class="prod-folder">
+      <summary class="prod-folder-head">Sin categoría <span class="prod-folder-count">${noCategory.length}</span></summary>
+      <div class="prod-folder-body"><div class="grid">${noCategory.map(productCardHtml).join('')}</div></div>
+    </details>`;
+  }
+
+  grid.innerHTML = html || '<div class="empty">No hay productos todavía.</div>';
+}
+
+function productCardHtml(p){
+  const img = p.product_images?.[0]?.image_url || '';
+  const badges = [];
+  if (p.is_offer) badges.push('<span class="badge hot">🔥 Oferta</span>');
+  if (p.is_new) badges.push('<span class="badge">✨ Nuevo</span>');
+  if (p.is_featured) badges.push('<span class="badge gold">⭐ Destacado</span>');
+  if (p.is_limited_edition) badges.push('<span class="badge gold">💎 Edición limitada</span>');
+  if (p.is_sold_out || p.stock === 0) badges.push('<span class="badge">Agotado</span>');
+  return `<div class="card ${selectedProductIds.has(p.id)?'selected':''}" data-id="${p.id}">
       <input type="checkbox" class="select-box" ${selectedProductIds.has(p.id)?'checked':''} onclick="event.stopPropagation();toggleProductSelected('${p.id}')"/>
       ${img ? `<img class="thumb" src="${img}" alt="${p.name}" onclick='event.stopPropagation();openLightbox("${img}")'/>` : `<div class="thumb-empty">⌚</div>`}
       <div class="card-body">
@@ -816,7 +934,6 @@ function renderProductsGrid(){
         </div>
       </div>
     </div>`;
-  }).join('');
 }
 
 // ───────────── SELECCIÓN MÚLTIPLE / BORRADO MASIVO ─────────────
@@ -1340,7 +1457,7 @@ function base64ToBlob(dataUrl){
   return new Blob([arr], { type: mime });
 }
 
-function compressImage(dataUrl, maxWidth = 1280, quality = 0.82){
+function compressImage(dataUrl, maxWidth = 1600, quality = 0.87){
   return new Promise((resolve, reject)=>{
     const img = new Image();
     img.onload = () => {
