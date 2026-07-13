@@ -92,6 +92,27 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;height:2px;backgroun
 .tab-btn.active .cnt{background:rgba(255,255,255,.25)}
 .tab-btn .cnt:empty{display:none}
 
+/* ── MENÚ DESPLEGABLE DEL ADMIN ── */
+.admin-menu{display:none;position:absolute;top:100%;right:24px;width:320px;max-width:calc(100vw - 32px);background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-lg);z-index:150;max-height:80vh;overflow-y:auto}
+.admin-menu.open{display:block;animation:modalIn .18s ease}
+.admin-menu-inner{padding:18px}
+.am-section{margin-bottom:18px}
+.am-section:last-child{margin-bottom:0}
+.am-label{display:block;font-size:.66rem;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.am-chips{display:flex;gap:6px;flex-wrap:wrap}
+.am-chip{padding:6px 12px;border-radius:20px;border:1.5px solid var(--line2);background:var(--panel2);color:var(--tx2);font-size:.74rem;font-weight:600;cursor:pointer;transition:all var(--t);font-family:inherit}
+.am-chip.active{background:var(--r);border-color:var(--r);color:#fff}
+.am-chip:hover:not(.active){border-color:var(--r);color:#fff}
+.am-link{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:9px 10px;border-radius:9px;border:none;background:none;color:var(--tx);font-size:.85rem;font-weight:600;cursor:pointer;transition:background var(--t);font-family:inherit;text-decoration:none}
+.am-link:hover{background:var(--panel2)}
+.am-link .cnt{margin-left:auto}
+.am-footer{border-top:1px solid var(--line);padding-top:14px}
+.am-danger{color:var(--rl)}
+.admin-menu-overlay{display:none;position:fixed;inset:0;z-index:140}
+.admin-menu-overlay.show{display:block}
+.active-filter-chip{display:inline-flex;align-items:center;gap:6px;background:rgba(200,16,46,.12);color:var(--rl);border:1px solid rgba(200,16,46,.35);padding:5px 12px;border-radius:20px;font-size:.76rem;font-weight:700}
+.active-filter-chip button{background:none;border:none;color:inherit;cursor:pointer;font-size:.9rem;line-height:1;padding:0}
+
 .content{padding:26px 24px 100px;max-width:1320px;margin:0 auto}
 .view{display:none;animation:viewIn .25s ease both}
 .view.active{display:block}
@@ -295,22 +316,40 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
     <div class="topbar-inner">
       <div class="brand"><div class="mark">⌚</div>Bogotá Bling<small style="margin-left:4px">ADMIN</small></div>
       <div class="topbar-actions">
-        <a href="/" target="_blank" class="btn btn-outline btn-sm">↗ Ver sitio</a>
-        <button class="btn btn-outline btn-sm" onclick="openPromoBarModal()">🔥 Promoción</button>
-        <button class="btn btn-gold btn-sm" onclick="openBulkModal()">📦 Subida masiva</button>
         <button class="btn btn-primary btn-sm" onclick="openProductModal()">+ Nuevo producto</button>
-        <button class="btn btn-outline btn-sm btn-icon" onclick="handleLogout()" title="Cerrar sesión">⏻</button>
+        <button class="btn btn-outline btn-sm" id="adminMenuBtn" onclick="toggleAdminMenu()">☰ Menú</button>
+      </div>
+    </div>
+
+    <div class="admin-menu" id="adminMenu">
+      <div class="admin-menu-inner">
+        <div class="am-section">
+          <label class="am-label">Buscar</label>
+          <input type="text" class="search-input" id="productSearch" placeholder="🔍 Buscar producto…" oninput="renderProductsGrid()" style="width:100%"/>
+        </div>
+        <div class="am-section">
+          <label class="am-label">Categorías</label>
+          <div class="am-chips" id="amCategoryChips"><button class="am-chip active" data-cat="" onclick="setCategoryFilter(null)">Todos</button></div>
+        </div>
+        <div class="am-section">
+          <label class="am-label">Catálogo</label>
+          <button class="am-link" onclick="goToView('products');toggleAdminMenu(false)">⌚ Productos <span class="cnt" id="cntProducts"></span></button>
+          <button class="am-link" onclick="goToView('categories');toggleAdminMenu(false)">🗂 Categorías <span class="cnt" id="cntCategories"></span></button>
+          <button class="am-link" onclick="openBulkModal();toggleAdminMenu(false)">📦 Subida masiva</button>
+          <button class="am-link" onclick="openPromoBarModal();toggleAdminMenu(false)">🔥 Promoción</button>
+        </div>
+        <div class="am-section">
+          <label class="am-label">Gestión</label>
+          <button class="am-link" onclick="goToView('reviews');toggleAdminMenu(false)">⭐ Reseñas <span class="cnt" id="cntReviews"></span></button>
+        </div>
+        <div class="am-section am-footer">
+          <a href="/" target="_blank" class="am-link">↗ Ver sitio</a>
+          <button class="am-link am-danger" onclick="handleLogout()">⏻ Cerrar sesión</button>
+        </div>
       </div>
     </div>
   </div>
-
-  <div class="subnav">
-    <div class="subnav-inner">
-      <button class="tab-btn active" data-view="products">⌚ Productos <span class="cnt" id="cntProducts"></span></button>
-      <button class="tab-btn" data-view="categories">🗂 Categorías <span class="cnt" id="cntCategories"></span></button>
-      <button class="tab-btn" data-view="reviews">⭐ Reseñas <span class="cnt" id="cntReviews"></span></button>
-    </div>
-  </div>
+  <div class="admin-menu-overlay" id="adminMenuOverlay" onclick="toggleAdminMenu(false)"></div>
 
   <div class="content">
 
@@ -318,8 +357,8 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
     <div class="view active" id="view-products">
       <div class="toolbar">
         <div class="sub" id="productCount">Cargando…</div>
-        <div style="display:flex;gap:8px;flex:1;justify-content:flex-end;flex-wrap:wrap">
-          <input type="text" class="search-input" id="productSearch" placeholder="🔍 Buscar producto…" oninput="renderProductsGrid()"/>
+        <div style="display:flex;gap:8px;flex:1;justify-content:flex-end;flex-wrap:wrap;align-items:center">
+          <span class="active-filter-chip" id="activeFilterChip" style="display:none"></span>
           <button class="btn btn-outline btn-sm" id="selectModeBtn" onclick="toggleSelectMode()">☑ Seleccionar</button>
         </div>
       </div>
@@ -643,6 +682,7 @@ async function loadCategories(){
   categoriesCache = data || [];
   renderCategoryTree();
   renderCategorySelects();
+  renderCategoryChips();
   document.getElementById('cntCategories').textContent = categoriesCache.length.toLocaleString('es-CO');
 }
 
@@ -801,24 +841,38 @@ async function loadReviewsAdmin(){
   const { data, error } = await sb.from('reviews').select('*').order('created_at', { ascending: false });
   const grid = document.getElementById('reviewsAdminGrid');
   const reviews = data || [];
-  document.getElementById('cntReviews').textContent = reviews.length.toLocaleString('es-CO');
+  const pending = reviews.filter(r => !r.approved).length;
+  document.getElementById('cntReviews').textContent = pending > 0 ? `${pending} pendiente${pending===1?'':'s'}` : reviews.length.toLocaleString('es-CO');
 
   if (error) { grid.innerHTML = '<p class="empty">No se pudieron cargar las reseñas.</p>'; return; }
   if (!reviews.length) { grid.innerHTML = '<div class="empty"><span>⭐</span>Todavía no hay reseñas de clientes.</div>'; return; }
 
-  grid.innerHTML = reviews.map(r => `
+  // Pendientes primero, para que no se pierdan entre las ya publicadas
+  const sorted = [...reviews].sort((a,b) => (a.approved === b.approved) ? 0 : (a.approved ? 1 : -1));
+
+  grid.innerHTML = `<div class="grid">${sorted.map(r => `
     <div class="card">
       ${r.image_url ? `<img class="thumb" src="${r.image_url}" alt="" onclick='openLightbox("${r.image_url}")'/>` : ''}
       <div class="card-body">
-        <h3>${r.customer_name}</h3>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px">
+          <h3 style="margin:0">${r.customer_name}</h3>
+          <span class="pill ${r.approved ? 'on' : 'off'}">${r.approved ? 'Publicada' : 'Pendiente'}</span>
+        </div>
         <div class="meta">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)} · ${new Date(r.created_at).toLocaleDateString('es-CO')}</div>
         <div class="desc" style="-webkit-line-clamp:5">${r.comment}</div>
         <div class="card-actions">
+          ${!r.approved ? `<button class="btn btn-primary btn-sm" onclick="approveReviewAdmin('${r.id}')">✔ Aprobar</button>` : ''}
           <button class="btn btn-outline btn-sm" onclick="deleteReviewAdmin('${r.id}')">🗑 Eliminar</button>
         </div>
       </div>
     </div>
-  `).join('');
+  `).join('')}</div>`;
+}
+
+async function approveReviewAdmin(id){
+  const { error } = await sb.from('reviews').update({ approved: true }).eq('id', id);
+  if (error) { alert('Error: ' + error.message); return; }
+  loadReviewsAdmin();
 }
 
 async function deleteReviewAdmin(id){
@@ -835,6 +889,7 @@ async function loadProducts(){
   productsCache = data || [];
   document.getElementById('cntProducts').textContent = productsCache.length.toLocaleString('es-CO');
   renderProductsGrid();
+  renderCategoryChips();
 }
 
 function categoryPath(p){
@@ -871,18 +926,20 @@ function renderProductsGrid(){
     else noCategory.push(p);
   });
 
-  const roots = categoriesCache.filter(c=>!c.parent_id);
+  let roots = categoriesCache.filter(c=>!c.parent_id);
   const childrenOf = pid => categoriesCache.filter(c=>c.parent_id===pid);
+  if (activeCategoryFilter) roots = roots.filter(r => r.id === activeCategoryFilter);
 
   let html = '';
   roots.forEach(root=>{
     const kids = childrenOf(root.id);
+    const openAttr = activeCategoryFilter ? ' open' : '';
     let count, body;
     if (kids.length) {
       body = kids.map(sub=>{
         const items = byCategory[sub.id] || [];
         if (!items.length) return '';
-        return `<details class="prod-folder prod-folder-sub">
+        return `<details class="prod-folder prod-folder-sub"${openAttr}>
           <summary class="prod-folder-head"><span>${sub.icon || ''}</span> ${sub.name} <span class="prod-folder-count">${items.length}</span></summary>
           <div class="grid">${items.map(productCardHtml).join('')}</div>
         </details>`;
@@ -894,13 +951,13 @@ function renderProductsGrid(){
       body = count ? `<div class="grid">${items.map(productCardHtml).join('')}</div>` : '';
     }
     if (!count) return;
-    html += `<details class="prod-folder">
+    html += `<details class="prod-folder"${openAttr}>
       <summary class="prod-folder-head"><span>${root.icon || ''}</span> ${root.name} <span class="prod-folder-count">${count}</span></summary>
       <div class="prod-folder-body">${body}</div>
     </details>`;
   });
 
-  if (noCategory.length) {
+  if (noCategory.length && !activeCategoryFilter) {
     html += `<details class="prod-folder">
       <summary class="prod-folder-head">Sin categoría <span class="prod-folder-count">${noCategory.length}</span></summary>
       <div class="prod-folder-body"><div class="grid">${noCategory.map(productCardHtml).join('')}</div></div>
@@ -937,6 +994,54 @@ function productCardHtml(p){
 }
 
 // ───────────── SELECCIÓN MÚLTIPLE / BORRADO MASIVO ─────────────
+// ───────────── MENÚ DESPLEGABLE ─────────────
+function toggleAdminMenu(force){
+  const menu = document.getElementById('adminMenu');
+  const overlay = document.getElementById('adminMenuOverlay');
+  const open = typeof force === 'boolean' ? force : !menu.classList.contains('open');
+  menu.classList.toggle('open', open);
+  overlay.classList.toggle('show', open);
+}
+
+// ───────────── FILTRO DE CATEGORÍA (chips) ─────────────
+let activeCategoryFilter = null; // id de categoría raíz, o null = "Todos"
+
+function renderCategoryChips(){
+  const wrap = document.getElementById('amCategoryChips');
+  const roots = categoriesCache.filter(c => !c.parent_id);
+  const childrenOf = pid => categoriesCache.filter(c => c.parent_id === pid);
+  const countFor = root => {
+    const kids = childrenOf(root.id);
+    const ids = kids.length ? kids.map(k=>k.id) : [root.id];
+    return productsCache.filter(p => ids.includes(p.category_id)).length;
+  };
+
+  const chips = roots
+    .map(r => ({ r, count: countFor(r) }))
+    .filter(x => x.count > 0);
+
+  wrap.innerHTML = `<button class="am-chip ${!activeCategoryFilter?'active':''}" onclick="setCategoryFilter(null)">Todos (${productsCache.length})</button>` +
+    chips.map(({r,count}) => `<button class="am-chip ${activeCategoryFilter===r.id?'active':''}" onclick="setCategoryFilter('${r.id}')">${r.icon||''} ${r.name} (${count})</button>`).join('');
+}
+
+function setCategoryFilter(rootId){
+  activeCategoryFilter = rootId;
+  document.getElementById('productSearch').value = '';
+  goToView('products');
+  toggleAdminMenu(false);
+  renderProductsGrid();
+  renderCategoryChips();
+
+  const chip = document.getElementById('activeFilterChip');
+  if (rootId) {
+    const root = categoriesCache.find(c => c.id === rootId);
+    chip.style.display = 'inline-flex';
+    chip.innerHTML = `Filtrando: ${root ? root.name : ''} <button onclick="setCategoryFilter(null)">✕</button>`;
+  } else {
+    chip.style.display = 'none';
+  }
+}
+
 function toggleSelectMode(){
   selectModeOn = !selectModeOn;
   document.getElementById('productsGrid').classList.toggle('select-mode', selectModeOn);
