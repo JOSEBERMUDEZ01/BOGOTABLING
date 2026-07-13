@@ -108,7 +108,7 @@ body::before{content:'';position:fixed;top:0;left:0;right:0;height:2px;backgroun
 .am-link .cnt{margin-left:auto}
 .am-footer{border-top:1px solid var(--line);padding-top:14px}
 .am-danger{color:var(--rl)}
-.admin-menu-overlay{display:none;position:fixed;inset:0;z-index:140}
+.admin-menu-overlay{display:none;position:fixed;inset:0;z-index:90}
 .admin-menu-overlay.show{display:block}
 .active-filter-chip{display:inline-flex;align-items:center;gap:6px;background:rgba(200,16,46,.12);color:var(--rl);border:1px solid rgba(200,16,46,.35);padding:5px 12px;border-radius:20px;font-size:.76rem;font-weight:700}
 .active-filter-chip button{background:none;border:none;color:inherit;cursor:pointer;font-size:.9rem;line-height:1;padding:0}
@@ -209,12 +209,6 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
 .pill.off{background:var(--panel2);color:var(--tx3)}
 .pill::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor}
 
-/* Floating action button (móvil) */
-.fab{display:none;position:fixed;bottom:22px;right:22px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--r),var(--rd));
-  color:#fff;font-size:1.6rem;border:none;cursor:pointer;box-shadow:0 10px 30px rgba(200,16,46,.5);z-index:150;
-  align-items:center;justify-content:center;transition:transform var(--t)}
-.fab:hover{transform:scale(1.08) rotate(90deg)}
-
 /* Modal */
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(3px);z-index:500;align-items:center;justify-content:center;padding:20px}
 .modal-bg.open{display:flex;animation:modalBgIn .18s ease}
@@ -270,7 +264,6 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
 .bulk-row img, .card .thumb, .card .thumb-empty{cursor:zoom-in}
 
 @media (max-width:900px){
-  .fab{display:flex}
   .search-input{width:100%}
   .field-row{grid-template-columns:1fr}
   .subnav-inner{padding:10px 16px}
@@ -396,7 +389,6 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
     <a href="https://wa.me/573225634059?text=Hola,%20vi%20el%20panel%20admin%20de%20Bogot%C3%A1%20Bling%20y%20quisiera%20cotizar%20un%20proyecto%20con%20JB%20TECH%20PRO" target="_blank" style="color:var(--gl);font-weight:700">JB TECH PRO</a>
   </footer>
 
-  <button class="fab" id="fabAdd" onclick="openProductModal()" title="Nuevo producto">+</button>
 </div>
 
 <!-- ══════════════ MODAL: PRODUCTO ══════════════ -->
@@ -666,7 +658,6 @@ function goToView(view){
   document.querySelectorAll('.tab-btn[data-view]').forEach(b=>b.classList.toggle('active', b.dataset.view===view));
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-'+view).classList.add('active');
-  document.getElementById('fabAdd').style.display = view === 'products' ? 'flex' : 'none';
 }
 document.querySelectorAll('.tab-btn[data-view]').forEach(btn=>{
   btn.addEventListener('click', ()=>goToView(btn.dataset.view));
