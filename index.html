@@ -268,6 +268,13 @@ body.has-promo .hero{padding-top:126px}
 .pc-img{aspect-ratio:3/4;overflow:hidden;background:var(--s1);position:relative}
 .pc-img img{width:100%;height:100%;object-fit:cover;transition:transform .45s ease;display:block}
 .pc:hover .pc-img img{transform:scale(1.06)}
+.pc-img-a,.pc-img-b{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;transition:opacity .6s ease,transform .45s ease}
+.pc-img-a{opacity:1;z-index:1}
+.pc-img-b{opacity:0;z-index:1}
+.pc-spin{position:absolute;top:10px;right:10px;z-index:2;display:flex;align-items:center;gap:4px;background:rgba(10,10,11,.6);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);color:#fff;font-size:.6rem;font-weight:800;letter-spacing:.06em;padding:4px 9px;border-radius:20px;border:1px solid rgba(255,255,255,.18)}
+.pc-spin::before{content:'';width:8px;height:8px;border-radius:50%;border:1.5px solid rgba(255,255,255,.9);border-top-color:transparent;animation:pcSpin 1s linear infinite}
+@keyframes pcSpin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.pc-spin{display:none}}
 .pc-tags{position:absolute;top:10px;left:10px;display:flex;gap:5px;flex-direction:column}
 .pc-hover{position:absolute;inset:0;background:rgba(0,0,0,0);display:flex;align-items:flex-end;justify-content:center;padding-bottom:14px;transition:background .28s}
 .pc-hover span{font-size:.7rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#fff;background:var(--r);padding:7px 16px;border-radius:30px;opacity:0;transform:translateY(10px);transition:all .28s}
@@ -1150,14 +1157,19 @@ function rGrid(list,gid){
     if (p.so) badge = '<span class="tag tag-out">Agotado</span>';
     else if (typeof p.stock === 'number' && p.stock > 0 && p.stock <= 2) badge += `<span class="tag tag-low">¡Últimas ${p.stock}!</span>`;
     const waT=encodeURIComponent('Hola, vi este producto en Bogotá Bling y me gustaría recibir más información. Producto: '+p.n);
+    const spin = (p.imgs && p.imgs.length > 1) ? '<span class="pc-spin">360°</span>' : '';
     return`<article class="pc reveal${p.so?' is-out':''}" style="transition-delay:${i*32}ms" data-gid="${gid}" data-idx="${i}" onclick="OM('${gid}',${i})">
-<div class="pc-img"><img src="${p.i}" alt="${p.n}" loading="lazy"/><div class="pc-tags">${badge}</div><div class="pc-hover"><span>Ver detalles</span></div></div>
+<div class="pc-img"><img class="pc-img-a" src="${p.i}" alt="${p.n}" loading="lazy"/><img class="pc-img-b" alt=""/>${spin}<div class="pc-tags">${badge}</div><div class="pc-hover"><span>Ver detalles</span></div></div>
 <div class="pc-body"><p class="pc-cat">${CL[p.c]||p.c}</p><h3 class="pc-name">${p.n}</h3>
 <div class="pc-foot"><span class="pc-price">${p.p}</span>
 <button class="pc-btn" onclick="event.stopPropagation();window.open('https://wa.me/${WA}?text=${waT}','_blank')">${p.so?'Consultar':'Preguntar'}</button>
 </div></div></article>`;
   }).join('');
   g.querySelectorAll('.reveal').forEach(e=>RO.observe(e));
+  g.querySelectorAll('.pc').forEach(el=>{
+    const p = list[Number(el.dataset.idx)];
+    if (p) initCardRotation(el, p.imgs);
+  });
 }
 
 function OM(gid,idx){CL2=GR[gid]||[];CI=idx;SM(CL2[idx]);}
@@ -1250,6 +1262,45 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')CM();});
 
 // Reveal
 const RO=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');RO.unobserve(e.target);}});},{threshold:.07,rootMargin:'0px 0px -16px 0px'});
+
+// ───────── ROTACIÓN AUTOMÁTICA DE FOTOS EN LAS TARJETAS (estilo turntable) ─────────
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const cardRotationObserver = prefersReducedMotion ? null : new IntersectionObserver(es=>{
+  es.forEach(e=>{ e.isIntersecting ? startCardRotation(e.target) : stopCardRotation(e.target); });
+},{threshold:.35});
+
+function initCardRotation(el, imgs){
+  if (prefersReducedMotion || !imgs || imgs.length < 2) return;
+  imgs.forEach(src=>{ const im = new Image(); im.src = src; }); // precarga para que el cruce sea instantáneo
+  el._rotImgs = imgs;
+  el._rotIdx = 0;
+  el._rotShowB = false;
+  cardRotationObserver.observe(el);
+}
+function startCardRotation(el){
+  if (el._rotTimer || document.hidden) return;
+  const imgs = el._rotImgs;
+  if (!imgs || imgs.length < 2) return;
+  const layerA = el.querySelector('.pc-img-a');
+  const layerB = el.querySelector('.pc-img-b');
+  el._rotTimer = setInterval(()=>{
+    if (document.hidden) return;
+    el._rotIdx = (el._rotIdx + 1) % imgs.length;
+    const nextLayer = el._rotShowB ? layerA : layerB;
+    const curLayer = el._rotShowB ? layerB : layerA;
+    nextLayer.src = imgs[el._rotIdx];
+    nextLayer.style.opacity = '1';
+    curLayer.style.opacity = '0';
+    el._rotShowB = !el._rotShowB;
+  }, 480);
+}
+function stopCardRotation(el){
+  if (el._rotTimer){ clearInterval(el._rotTimer); el._rotTimer = null; }
+}
+document.addEventListener('visibilitychange', ()=>{
+  if (document.hidden) document.querySelectorAll('.pc').forEach(stopCardRotation);
+  else document.querySelectorAll('.pc').forEach(el=>{ if (el._rotImgs && el._rotImgs.length>1 && !el._rotTimer) startCardRotation(el); });
+});
 setTimeout(()=>document.querySelectorAll('.reveal').forEach(e=>RO.observe(e)),80);
 
 // Lazy grid render — el elemento observado ES el grid (su id ya es "g-xxx")
