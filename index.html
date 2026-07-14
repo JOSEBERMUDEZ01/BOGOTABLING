@@ -276,6 +276,33 @@ body.has-promo .hero{padding-top:126px}
 @keyframes pcSpin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.pc-spin{display:none}}
 
+/* ── VITRINA GIRATORIA para productos con 1 sola foto (sin fotos extra, puro CSS) ── */
+.pc-img.single-tilt{perspective:700px}
+.pc-img.single-tilt .pc-img-a{transition:none;animation:pcTilt 4.2s ease-in-out infinite;animation-play-state:paused;will-change:transform}
+.pc-img.single-tilt.in-view .pc-img-a{animation-play-state:running}
+@keyframes pcTilt{
+  0%,100%{transform:perspective(700px) rotateY(-9deg) scale(1.045)}
+  50%{transform:perspective(700px) rotateY(9deg) scale(1.045)}
+}
+.pc-img.single-tilt::before{
+  content:'';position:absolute;inset:0;z-index:2;pointer-events:none;
+  background:linear-gradient(115deg,transparent 42%,rgba(255,255,255,.5) 50%,transparent 58%);
+  background-size:260% 260%;background-position:200% 0;
+  animation:pcShine 4.2s ease-in-out infinite;animation-play-state:paused;
+}
+.pc-img.single-tilt.in-view::before{animation-play-state:running}
+@keyframes pcShine{0%{background-position:220% 0}100%{background-position:-120% 0}}
+@media(prefers-reduced-motion:reduce){.pc-img.single-tilt .pc-img-a,.pc-img.single-tilt::before{animation:none}}
+
+/* Misma vitrina giratoria, ahora también en el visor grande del modal (1 sola foto) */
+#mImgWrap.single-tilt .modal-img{animation:pcTilt 4.2s ease-in-out infinite;will-change:transform}
+#mImgWrap.single-tilt::before{
+  content:'';position:absolute;inset:0;z-index:2;pointer-events:none;border-radius:inherit;
+  background:linear-gradient(115deg,transparent 42%,rgba(255,255,255,.5) 50%,transparent 58%);
+  background-size:260% 260%;background-position:200% 0;animation:pcShine 4.2s ease-in-out infinite;
+}
+@media(prefers-reduced-motion:reduce){#mImgWrap.single-tilt .modal-img,#mImgWrap.single-tilt::before{animation:none}}
+
 /* ── SKELETON LOADING (mientras cargan productos/categorías desde Supabase) ── */
 @keyframes pcShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .pc-skel{background:var(--white);border:1px solid var(--s2);border-radius:var(--radius);overflow:hidden;box-shadow:var(--sh)}
@@ -288,8 +315,8 @@ body.has-promo .hero{padding-top:126px}
 .pc-skel-foot{display:flex;justify-content:space-between;align-items:center;padding-top:9px;margin-top:9px;border-top:1px solid var(--s2)}
 .sec-skel-head{height:22px;width:220px;border-radius:6px;background:linear-gradient(100deg,var(--s1) 30%,var(--s2) 50%,var(--s1) 70%);background-size:200% 100%;animation:pcShimmer 1.4s ease-in-out infinite;margin-bottom:24px}
 @media(prefers-reduced-motion:reduce){.pc-skel-img,.pc-skel-line,.sec-skel-head{animation:none;background:var(--s2)}}
-.pc-tags{position:absolute;top:10px;left:10px;display:flex;gap:5px;flex-direction:column}
-.pc-hover{position:absolute;inset:0;background:rgba(0,0,0,0);display:flex;align-items:flex-end;justify-content:center;padding-bottom:14px;transition:background .28s}
+.pc-tags{position:absolute;top:10px;left:10px;display:flex;gap:5px;flex-direction:column;z-index:3}
+.pc-hover{position:absolute;inset:0;background:rgba(0,0,0,0);display:flex;align-items:flex-end;justify-content:center;padding-bottom:14px;transition:background .28s;z-index:3}
 .pc-hover span{font-size:.7rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#fff;background:var(--r);padding:7px 16px;border-radius:30px;opacity:0;transform:translateY(10px);transition:all .28s}
 .pc:hover .pc-hover{background:rgba(0,0,0,.28)}
 .pc:hover .pc-hover span{opacity:1;transform:none}
@@ -966,22 +993,28 @@ function skelCategorySection(){
 
 // Genera datos estructurados (schema.org Product) por cada producto, para que
 // Google pueda mostrar precio/disponibilidad directo en los resultados de búsqueda.
+// IMPORTANTE: Google exige que todo Product tenga "offers", "review" o "aggregateRating".
+// Los productos sin precio fijo (p.ej. "Consultar") no tienen forma válida de armar
+// "offers", así que se excluyen del schema en vez de mandarlos incompletos.
 function injectProductSchema(products){
-  const items = products.filter(p => !p.is_sold_out).slice(0, 60).map(p=>({
-    "@type":"Product",
-    "name": p.name,
-    "description": p.description || undefined,
-    "image": p.product_images && p.product_images[0] ? p.product_images[0].image_url : undefined,
-    "url": "https://bogotabling.vercel.app/",
-    "brand": { "@type":"Brand", "name":"Bogotá Bling" },
-    "offers": Number(p.price_current) > 0 ? {
-      "@type":"Offer",
-      "priceCurrency":"COP",
-      "price": Number(p.price_current),
-      "availability": p.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+  const items = products
+    .filter(p => !p.is_sold_out && Number(p.price_current) > 0)
+    .slice(0, 60)
+    .map(p=>({
+      "@type":"Product",
+      "name": p.name,
+      "description": p.description || undefined,
+      "image": p.product_images && p.product_images[0] ? p.product_images[0].image_url : undefined,
       "url": "https://bogotabling.vercel.app/",
-    } : undefined,
-  }));
+      "brand": { "@type":"Brand", "name":"Bogotá Bling" },
+      "offers": {
+        "@type":"Offer",
+        "priceCurrency":"COP",
+        "price": Number(p.price_current),
+        "availability": p.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+        "url": "https://bogotabling.vercel.app/",
+      },
+    }));
   if (!items.length) return;
 
   let el = document.getElementById('productSchema');
@@ -1295,7 +1328,9 @@ function setupRotation(images){
   rotFrames = images && images.length ? images : [''];
   rotIndex = 0;
   const wrap = document.getElementById('mImgWrap');
-  wrap.classList.toggle('has-multi', rotFrames.length > 1);
+  const hasMulti = rotFrames.length > 1;
+  wrap.classList.toggle('has-multi', hasMulti);
+  wrap.classList.toggle('single-tilt', !hasMulti && !prefersReducedMotion);
   document.getElementById('mImgHint').classList.remove('hide');
   renderRotFrame();
   renderRotDots();
@@ -1355,15 +1390,26 @@ const RO=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.tar
 // ───────── ROTACIÓN AUTOMÁTICA DE FOTOS EN LAS TARJETAS (estilo turntable) ─────────
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const cardRotationObserver = prefersReducedMotion ? null : new IntersectionObserver(es=>{
-  es.forEach(e=>{ e.isIntersecting ? startCardRotation(e.target) : stopCardRotation(e.target); });
+  es.forEach(e=>{
+    const el = e.target;
+    if (el._rotImgs) { e.isIntersecting ? startCardRotation(el) : stopCardRotation(el); }
+    const tiltWrap = el.querySelector('.pc-img.single-tilt');
+    if (tiltWrap) tiltWrap.classList.toggle('in-view', e.isIntersecting);
+  });
 },{threshold:.15,rootMargin:'0px 0px -5% 0px'});
 
 function initCardRotation(el, imgs){
-  if (prefersReducedMotion || !imgs || imgs.length < 2) return;
-  imgs.forEach(src=>{ const im = new Image(); im.src = src; }); // precarga para que el cruce sea instantáneo
-  el._rotImgs = imgs;
-  el._rotIdx = 0;
-  el._rotShowB = false;
+  if (prefersReducedMotion || !imgs || !imgs.length) return;
+  if (imgs.length >= 2){
+    imgs.forEach(src=>{ const im = new Image(); im.src = src; }); // precarga para que el cruce sea instantáneo
+    el._rotImgs = imgs;
+    el._rotIdx = 0;
+    el._rotShowB = false;
+  } else {
+    // Solo 1 foto: vitrina giratoria con luz (puro CSS, sin fotos ni datos extra)
+    const wrap = el.querySelector('.pc-img');
+    if (wrap) wrap.classList.add('single-tilt');
+  }
   cardRotationObserver.observe(el);
 }
 function startCardRotation(el){
