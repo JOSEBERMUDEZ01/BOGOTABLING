@@ -268,13 +268,26 @@ body.has-promo .hero{padding-top:126px}
 .pc-img{aspect-ratio:3/4;overflow:hidden;background:var(--s1);position:relative}
 .pc-img img{width:100%;height:100%;object-fit:cover;transition:transform .45s ease;display:block}
 .pc:hover .pc-img img{transform:scale(1.06)}
-.pc-img-a,.pc-img-b{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;transition:opacity .6s ease,transform .45s ease}
+.pc-img-a,.pc-img-b{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;transition:opacity .5s ease,transform .45s ease}
 .pc-img-a{opacity:1;z-index:1}
 .pc-img-b{opacity:0;z-index:1}
 .pc-spin{position:absolute;top:10px;right:10px;z-index:2;display:flex;align-items:center;gap:4px;background:rgba(10,10,11,.6);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);color:#fff;font-size:.6rem;font-weight:800;letter-spacing:.06em;padding:4px 9px;border-radius:20px;border:1px solid rgba(255,255,255,.18)}
 .pc-spin::before{content:'';width:8px;height:8px;border-radius:50%;border:1.5px solid rgba(255,255,255,.9);border-top-color:transparent;animation:pcSpin 1s linear infinite}
 @keyframes pcSpin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.pc-spin{display:none}}
+
+/* ── SKELETON LOADING (mientras cargan productos/categorías desde Supabase) ── */
+@keyframes pcShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.pc-skel{background:var(--white);border:1px solid var(--s2);border-radius:var(--radius);overflow:hidden;box-shadow:var(--sh)}
+.pc-skel-img{aspect-ratio:3/4;background:linear-gradient(100deg,var(--s1) 30%,var(--s2) 50%,var(--s1) 70%);background-size:200% 100%;animation:pcShimmer 1.4s ease-in-out infinite}
+.pc-skel-body{padding:13px 14px 15px}
+.pc-skel-line{height:10px;border-radius:5px;background:linear-gradient(100deg,var(--s1) 30%,var(--s2) 50%,var(--s1) 70%);background-size:200% 100%;animation:pcShimmer 1.4s ease-in-out infinite;margin-bottom:8px}
+.pc-skel-line.w90{width:90%;height:13px;margin-bottom:12px}
+.pc-skel-line.w60{width:60%}
+.pc-skel-line.w40{width:40%;margin-bottom:0}
+.pc-skel-foot{display:flex;justify-content:space-between;align-items:center;padding-top:9px;margin-top:9px;border-top:1px solid var(--s2)}
+.sec-skel-head{height:22px;width:220px;border-radius:6px;background:linear-gradient(100deg,var(--s1) 30%,var(--s2) 50%,var(--s1) 70%);background-size:200% 100%;animation:pcShimmer 1.4s ease-in-out infinite;margin-bottom:24px}
+@media(prefers-reduced-motion:reduce){.pc-skel-img,.pc-skel-line,.sec-skel-head{animation:none;background:var(--s2)}}
 .pc-tags{position:absolute;top:10px;left:10px;display:flex;gap:5px;flex-direction:column}
 .pc-hover{position:absolute;inset:0;background:rgba(0,0,0,0);display:flex;align-items:flex-end;justify-content:center;padding-bottom:14px;transition:background .28s}
 .pc-hover span{font-size:.7rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#fff;background:var(--r);padding:7px 16px;border-radius:30px;opacity:0;transform:translateY(10px);transition:all .28s}
@@ -427,6 +440,9 @@ body.has-promo .hero{padding-top:126px}
 .mp-v{font-size:1.1rem;font-weight:900;color:var(--r)}
 .modal-wa{display:flex;align-items:center;justify-content:center;gap:10px;background:#25D366;color:#fff;font-size:.92rem;font-weight:800;padding:15px 20px;border-radius:10px;transition:all .25s;margin-bottom:12px}
 .modal-wa:hover{background:#1da851;transform:translateY(-2px);box-shadow:0 10px 28px rgba(37,211,102,.4)}
+.modal-copy-link{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:var(--s1);border:1.5px solid var(--s3);color:var(--k2);font-size:.82rem;font-weight:700;padding:11px 16px;border-radius:10px;cursor:pointer;transition:all var(--t);margin-bottom:12px;font-family:inherit}
+.modal-copy-link:hover{border-color:var(--r);color:var(--r);background:#fff}
+.modal-copy-link.copied{background:rgba(74,222,128,.12);border-color:#4ade80;color:#16a34a}
 /* Nav arrows */
 .modal-nav{display:flex;gap:10px;margin-bottom:24px}
 .m-prev,.m-next{flex:1;padding:12px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:10px;color:rgba(255,255,255,.7);font-size:.8rem;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:.02em;display:flex;align-items:center;justify-content:center;gap:6px}
@@ -602,7 +618,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{
     <a href="#faq">Preguntas frecuentes</a>
     <a href="#beneficios">Nosotros</a>
     <a href="#contacto">Contacto</a>
-    <a href="https://wa.me/573177810009?text=Hola%2C%20vi%20este%20producto%20en%20Bogot%C3%A1%20Bling%20y%20me%20gustar%C3%ADa%20recibir%20m%C3%A1s%20informaci%C3%B3n." target="_blank">💬 Escribir por WhatsApp</a>
+    <a href="https://wa.me/573177810009?text=Hola%2C%20vi%20este%20producto%20en%20Bogot%C3%A1%20Bling%20y%20me%20gustar%C3%ADa%20recibir%20m%C3%A1s%20informaci%C3%B3n." target="_blank">Escribir por WhatsApp</a>
   </div>
 </div>
 
@@ -643,8 +659,8 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{
 <!-- STICKY CAT NAV -->
 <nav class="cat-nav" id="catNav">
   <div class="cat-nav-list">
-    <button class="cat-nav-btn on" data-t="destacados">🔥 Destacados</button>
-    <button class="cat-nav-btn" data-t="novedades">✨ Novedades</button>
+    <button class="cat-nav-btn on" data-t="destacados">Destacados</button>
+    <button class="cat-nav-btn" data-t="novedades">Novedades</button>
   </div>
 </nav>
 
@@ -653,7 +669,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{
   <div class="container">
     <div class="sec-head">
       <p class="sec-eye">Selección especial</p>
-      <h2 class="sec-h2">🔥 Productos Destacados</h2>
+      <h2 class="sec-h2">Productos Destacados</h2>
       <p class="sec-sub">Las piezas más solicitadas de la colección. Calidad y lujo garantizados.</p>
     </div>
     <div class="prod-grid" id="g-destacados"></div>
@@ -683,7 +699,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{
   <div class="container">
     <div class="sec-head">
       <p class="sec-eye">Recién llegadas</p>
-      <h2 class="sec-h2">✨ Novedades</h2>
+      <h2 class="sec-h2">Novedades</h2>
       <p class="sec-sub">Lo más nuevo de la colección. Sé el primero en tenerlo.</p>
     </div>
     <div class="prod-grid" id="g-novedades"></div>
@@ -726,7 +742,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{
     <div id="reviewsList" class="reviews-list"><p style="color:var(--k3);font-size:.85rem">Cargando reseñas…</p></div>
 
     <div class="review-form-wrap">
-      <button class="btn btn-out" id="reviewFormToggle" onclick="toggleReviewForm()">✍️ Escribir una reseña</button>
+      <button class="btn btn-out" id="reviewFormToggle" onclick="toggleReviewForm()">Escribir una reseña</button>
       <form id="reviewForm" class="review-form" style="display:none" onsubmit="submitReview(event)">
         <div class="rf-row">
           <input type="text" id="rfName" placeholder="Tu nombre" maxlength="80" required/>
@@ -736,7 +752,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{
         </div>
         <textarea id="rfComment" placeholder="Cuéntanos tu experiencia con Bogotá Bling…" maxlength="600" required></textarea>
         <div class="rf-row">
-          <label class="rf-photo-btn" for="rfPhoto">📷 Agregar foto (opcional)<input type="file" id="rfPhoto" accept="image/*" style="display:none" onchange="handleReviewPhoto(event)"/></label>
+          <label class="rf-photo-btn" for="rfPhoto">Agregar foto (opcional)<input type="file" id="rfPhoto" accept="image/*" style="display:none" onchange="handleReviewPhoto(event)"/></label>
           <span id="rfPhotoName" style="font-size:.78rem;color:var(--k3)"></span>
         </div>
         <div class="rf-actions">
@@ -798,7 +814,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{
 <section class="contact" id="contacto">
   <div class="container">
     <div class="contact-inner">
-      <h2>📲 ¿Lista tu próxima pieza?</h2>
+      <h2>¿Lista tu próxima pieza?</h2>
       <p>Escríbenos ahora. Te atendemos de inmediato y encontramos la pieza perfecta para ti.</p>
       <div class="contact-btns">
         <a href="https://wa.me/573177810009?text=Hola%2C%20vi%20este%20producto%20en%20Bogot%C3%A1%20Bling%20y%20me%20gustar%C3%ADa%20recibir%20m%C3%A1s%20informaci%C3%B3n." target="_blank" class="btn btn-wa btn-wa-xl">
@@ -896,6 +912,10 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.118 1.528 5.845L.057 23.547a.5.5 0 0 0 .612.612l5.702-1.471A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22a9.962 9.962 0 0 1-5.022-1.358l-.361-.213-3.741.964.992-3.633-.236-.374A9.954 9.954 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
         Preguntar por este producto
       </a>
+      <button class="modal-copy-link" id="mCopyLinkBtn" onclick="copyProductLink()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        <span id="mCopyLinkTxt">Copiar link de este producto</span>
+      </button>
       <div class="modal-nav">
         <button class="m-prev" id="mPrev">← Anterior</button>
         <button class="m-next" id="mNext">Siguiente →</button>
@@ -915,6 +935,34 @@ let GR={};        // grupos de renderizado por id de grid
 let CL2=[],CI=0;
 
 function money(n){ return (typeof n==='number' && n>0) ? ('$'+n.toLocaleString('es-CO')) : 'Consultar'; }
+
+// ───────── SKELETON LOADING (placeholders mientras responde Supabase) ─────────
+function skelCard(){
+  return `<div class="pc-skel"><div class="pc-skel-img"></div><div class="pc-skel-body">
+<div class="pc-skel-line w40"></div><div class="pc-skel-line w90"></div>
+<div class="pc-skel-foot"><div class="pc-skel-line w60" style="margin:0"></div></div>
+</div></div>`;
+}
+function fillSkeletonGrid(id, count){
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = skelCard().repeat(count);
+}
+function skelCategorySection(){
+  const div = document.createElement('div');
+  div.className = 'section skel-cat-section';
+  div.innerHTML = `<div class="container"><div class="sec-skel-head"></div>
+<div class="prod-grid">${skelCard().repeat(4)}</div></div>`;
+  return div;
+}
+(function showInitialSkeletons(){
+  fillSkeletonGrid('g-destacados', 4);
+  fillSkeletonGrid('g-novedades', 4);
+  const catalogoDiv = document.getElementById('catalogo');
+  if (catalogoDiv){
+    catalogoDiv.appendChild(skelCategorySection());
+    catalogoDiv.appendChild(skelCategorySection());
+  }
+})();
 
 // Genera datos estructurados (schema.org Product) por cada producto, para que
 // Google pueda mostrar precio/disponibilidad directo en los resultados de búsqueda.
@@ -1024,6 +1072,7 @@ async function loadCatalog(){
 
   // Insertar secciones dentro de #catalogo (entre Destacados y Novedades)
   const catalogoDiv = document.getElementById('catalogo');
+  catalogoDiv.innerHTML = ''; // quita el skeleton de carga
   rootGroups.forEach((rg,i)=>{
     catalogoDiv.appendChild(buildCategorySection(rg.root, rg.groups, 'Colección', i%2===1));
   });
@@ -1065,6 +1114,10 @@ async function loadCatalog(){
   buildMegaMenu(cats, rootGroups);
   buildMobileAccordion(cats, rootGroups);
   loadPromoBar();
+
+  // Si alguien entró con un link directo a un producto (#producto/slug), lo abrimos
+  const directMatch = location.hash.match(/^#producto\/(.+)$/);
+  if (directMatch) openProductBySlug(decodeURIComponent(directMatch[1]));
 }
 
 function jumpTo(id){
@@ -1143,7 +1196,7 @@ async function loadPromoBar(){
   const promo = data && data[0];
   if (!promo){ bar.classList.remove('show'); document.body.classList.remove('has-promo'); return; }
   const discount = promo.discount_percent ? `<b>${promo.discount_percent}% OFF</b> — ` : '';
-  bar.innerHTML = `🔥 ${discount}${promo.title}${promo.description ? ' · ' + promo.description : ''}`;
+  bar.innerHTML = `${discount}${promo.title}${promo.description ? ' · ' + promo.description : ''}`;
   bar.classList.add('show');
   document.body.classList.add('has-promo');
 }
@@ -1173,6 +1226,7 @@ function rGrid(list,gid){
 }
 
 function OM(gid,idx){CL2=GR[gid]||[];CI=idx;SM(CL2[idx]);}
+let currentProductSlug='';
 function SM(p){
   const waT=encodeURIComponent('Hola, vi este producto en Bogotá Bling y me gustaría recibir más información. Producto: '+p.n);
   setupRotation(p.imgs && p.imgs.length ? p.imgs : (p.i ? [p.i] : []));
@@ -1189,8 +1243,43 @@ function SM(p){
   if(viewer) viewer.scrollTop=0;
   document.getElementById('mBg').classList.add('open');
   document.body.style.overflow='hidden';
+  currentProductSlug = p.s || '';
+  if (currentProductSlug) history.replaceState(null,'','#producto/'+encodeURIComponent(currentProductSlug));
 }
-function CM(){document.getElementById('mBg').classList.remove('open');document.body.style.overflow='';}
+function CM(){
+  document.getElementById('mBg').classList.remove('open');
+  document.body.style.overflow='';
+  if (location.hash.indexOf('#producto/')===0) history.replaceState(null,'',location.pathname+location.search);
+}
+
+// ───────── LINK DIRECTO POR PRODUCTO (compartir #producto/slug) ─────────
+function openProductBySlug(slug){
+  const idx = P.findIndex(p=>p.s===slug);
+  if (idx === -1) return;
+  CL2 = P; CI = idx;
+  SM(P[idx]);
+}
+function copyProductLink(){
+  const url = location.origin + location.pathname + '#producto/' + encodeURIComponent(currentProductSlug);
+  const btn = document.getElementById('mCopyLinkBtn');
+  const txt = document.getElementById('mCopyLinkTxt');
+  const original = txt ? txt.textContent : '';
+  const finish = (ok)=>{
+    if (!txt || !btn) return;
+    txt.textContent = ok ? '¡Link copiado!' : 'No se pudo copiar';
+    btn.classList.toggle('copied', ok);
+    setTimeout(()=>{ txt.textContent = original; btn.classList.remove('copied'); }, 1800);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(()=>finish(true)).catch(()=>finish(false));
+  } else {
+    try{
+      const ta=document.createElement('textarea'); ta.value=url; ta.style.position='fixed'; ta.style.opacity='0';
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+      finish(true);
+    }catch(e){ finish(false); }
+  }
+}
 
 // ───────── GALERÍA / ROTACIÓN DE FOTOS (estilo 360°) ─────────
 // Con 1 sola foto no hay nada que rotar. Entre más fotos en distintos ángulos
@@ -1267,7 +1356,7 @@ const RO=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.tar
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const cardRotationObserver = prefersReducedMotion ? null : new IntersectionObserver(es=>{
   es.forEach(e=>{ e.isIntersecting ? startCardRotation(e.target) : stopCardRotation(e.target); });
-},{threshold:.35});
+},{threshold:.15,rootMargin:'0px 0px -5% 0px'});
 
 function initCardRotation(el, imgs){
   if (prefersReducedMotion || !imgs || imgs.length < 2) return;
@@ -1292,7 +1381,7 @@ function startCardRotation(el){
     nextLayer.style.opacity = '1';
     curLayer.style.opacity = '0';
     el._rotShowB = !el._rotShowB;
-  }, 480);
+  }, 700);
 }
 function stopCardRotation(el){
   if (el._rotTimer){ clearInterval(el._rotTimer); el._rotTimer = null; }
@@ -1376,7 +1465,7 @@ async function loadReviews(){
         <div class="rc-own-actions">
           <button onclick="startEditReview('${r.id}', ${r.rating}, ${JSON.stringify(r.comment)})">✎ Editar</button>
           <span>·</span>
-          <button onclick="deleteOwnReview('${r.id}')">🗑 Borrar</button>
+          <button onclick="deleteOwnReview('${r.id}')">Borrar</button>
         </div>` : ''}
     </div>
   `).join('');
