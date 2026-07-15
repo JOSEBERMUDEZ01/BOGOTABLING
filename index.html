@@ -264,7 +264,7 @@ body.has-promo .hero{padding-top:126px}
 /* ── PRODUCT CARDS ── */
 .prod-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
 .pc{background:#fff;border:1px solid var(--s2);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:all var(--t);box-shadow:var(--sh);position:relative}
-.pc:hover{border-color:var(--r);box-shadow:var(--shrl);transform:translateY(-6px)}
+.pc:hover{border-color:var(--r);box-shadow:var(--shrl)}
 .pc-img{aspect-ratio:3/4;overflow:hidden;background:var(--s1);position:relative}
 .pc-img img{width:100%;height:100%;object-fit:cover;transition:transform .45s ease;display:block}
 .pc:hover .pc-img img{transform:scale(1.06)}
@@ -391,6 +391,10 @@ body.has-promo #mobMenuBackdrop{top:106px}
 .faq-item summary::after{content:'+';position:absolute;right:0;top:50%;transform:translateY(-50%);font-size:1.3rem;color:var(--r);font-weight:400;transition:transform var(--t)}
 .faq-item[open] summary::after{transform:translateY(-50%) rotate(45deg)}
 .faq-item p{font-size:.86rem;color:var(--k3);line-height:1.7;padding:0 0 20px}
+
+/* ── Revelado de títulos palabra por palabra ── */
+.sec-h2 .split-word,.sec-h3 .split-word{display:inline-block;overflow:hidden;vertical-align:top}
+.sec-h2 .split-word-inner,.sec-h3 .split-word-inner{display:inline-block;will-change:transform}
 
 /* ── FAQ como modal (se abre desde el menú, ya no está fijo en la página) ── */
 .faq-modal-bg{position:fixed;inset:0;z-index:2100;background:rgba(6,6,7,.82);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .3s ease}
@@ -579,8 +583,8 @@ body.has-promo #mobMenuBackdrop{top:106px}
 .btn-out:hover{box-shadow:0 8px 22px rgba(200,16,46,.18);transform:translateY(-2px)}
 
 /* Tarjetas de producto: elevación + realce de imagen más elegante */
-.pc{transition:transform .38s cubic-bezier(.16,1,.3,1),box-shadow .38s cubic-bezier(.16,1,.3,1),border-color var(--t)}
-.pc:hover{transform:translateY(-8px);box-shadow:0 22px 48px -14px rgba(200,16,46,.28),0 4px 14px rgba(0,0,0,.06)}
+.pc{transition:box-shadow .38s cubic-bezier(.16,1,.3,1),border-color var(--t)}
+.pc:hover{box-shadow:0 22px 48px -14px rgba(200,16,46,.28),0 4px 14px rgba(0,0,0,.06)}
 .pc-img::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 60%,rgba(0,0,0,.18) 100%);opacity:0;transition:opacity .3s ease}
 .pc:hover .pc-img::after{opacity:1}
 .pc-btn{transition:all .25s cubic-bezier(.4,0,.2,1)}
@@ -1207,6 +1211,7 @@ async function loadCatalog(){
   buildMegaMenu(cats, rootGroups);
   buildMobileAccordion(cats, rootGroups);
   loadPromoBar();
+  if (window.splitHeadings) window.splitHeadings(); // títulos de las secciones de categoría (recién creadas)
 
   // Si alguien entró con un link directo a un producto (#producto/slug), lo abrimos
   const directMatch = location.hash.match(/^#producto\/(.+)$/);
@@ -1315,6 +1320,7 @@ function rGrid(list,gid){
   g.querySelectorAll('.pc').forEach(el=>{
     const p = list[Number(el.dataset.idx)];
     if (p) initCardRotation(el, p.imgs);
+    attachTilt(el);
   });
 }
 
@@ -1570,6 +1576,26 @@ const cardRotationObserver = prefersReducedMotion ? null : new IntersectionObser
     if (el._rotImgs && el._rotImgs.length > 1) { e.isIntersecting ? startCardRotation(el) : stopCardRotation(el); }
   });
 },{threshold:.15,rootMargin:'0px 0px -5% 0px'});
+
+// Tilt magnético 3D en las tarjetas (solo con mouse/trackpad, no en táctil)
+const hasFinePointer = window.matchMedia('(pointer:fine)').matches;
+function attachTilt(card){
+  if (prefersReducedMotion || !hasFinePointer || !window.gsap || card._tiltReady) return;
+  card._tiltReady = true;
+  gsap.set(card, { transformPerspective: 800, transformStyle: 'preserve-3d' });
+  const qx = gsap.quickTo(card, 'rotateX', { duration: .45, ease: 'power3.out' });
+  const qy = gsap.quickTo(card, 'rotateY', { duration: .45, ease: 'power3.out' });
+  const qz = gsap.quickTo(card, 'y', { duration: .45, ease: 'power3.out' });
+  card.addEventListener('mousemove', e=>{
+    const r = card.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width - .5;
+    const py = (e.clientY - r.top) / r.height - .5;
+    qy(px * 9);
+    qx(-py * 7);
+    qz(-8);
+  });
+  card.addEventListener('mouseleave', ()=>{ qx(0); qy(0); qz(0); });
+}
 
 function initCardRotation(el, imgs){
   if (prefersReducedMotion || !imgs || !imgs.length) return;
@@ -1905,6 +1931,24 @@ function openLightboxReview(src){
 (function(){
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (window.gsap && window.ScrollTrigger) gsap.registerPlugin(ScrollTrigger);
+
+  // ───────── Títulos: revelado palabra por palabra al hacer scroll ─────────
+  window.splitHeadings = function(){
+    if (reduceMotion || !window.gsap || !window.ScrollTrigger) return;
+    document.querySelectorAll('.sec-h2, .sec-h3').forEach(el=>{
+      if (el.dataset.split) return;
+      el.dataset.split = '1';
+      const words = el.textContent.trim().split(/\s+/);
+      el.innerHTML = words.map(w => `<span class="split-word"><span class="split-word-inner">${w}</span></span>`).join(' ');
+      const inners = el.querySelectorAll('.split-word-inner');
+      gsap.set(inners, { yPercent: 115, opacity: 0 });
+      ScrollTrigger.create({
+        trigger: el, start: 'top 88%', once: true,
+        onEnter: () => gsap.to(inners, { yPercent: 0, opacity: 1, duration: .85, ease: 'power4.out', stagger: .045 })
+      });
+    });
+  };
+  window.splitHeadings();
 
   // ───────── Contador animado (productos / categorías en el hero) ─────────
   window.animateCounter = function(el, target, suffix){
