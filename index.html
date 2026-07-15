@@ -294,6 +294,36 @@ body.has-promo .hero{padding-top:126px}
 @keyframes pcShine{0%{background-position:220% 0}100%{background-position:-120% 0}}
 @media(prefers-reduced-motion:reduce){.pc-img.single-tilt .pc-img-a,.pc-img.single-tilt::before{animation:none}}
 
+/* ── PANTALLA DE CARGA ── */
+#loadScreen{position:fixed;inset:0;z-index:9999;background:#0a0a0b;display:flex;align-items:center;justify-content:center}
+.load-inner{display:flex;flex-direction:column;align-items:center;gap:22px}
+#loadLogo{width:60px;height:60px;object-fit:contain;opacity:0;transform:scale(.85)}
+.load-bar{width:150px;height:2px;background:rgba(255,255,255,.15);border-radius:2px;overflow:hidden}
+.load-bar-fill{width:0%;height:100%;background:var(--r);border-radius:2px}
+@media(prefers-reduced-motion:reduce){#loadScreen{transition:none!important}#loadLogo{opacity:1;transform:none}}
+
+/* ── Botones premium: brillo que recorre + ripple ── */
+.gsap-shine{position:relative;overflow:hidden}
+.gsap-shine::after{
+  content:'';position:absolute;top:0;left:-60%;width:40%;height:100%;
+  background:linear-gradient(115deg,transparent 0%,rgba(255,255,255,.35) 50%,transparent 100%);
+  transform:skewX(-20deg);animation:btnShine 3.2s ease-in-out infinite;pointer-events:none
+}
+@keyframes btnShine{0%{left:-60%}35%{left:120%}100%{left:120%}}
+.btn-ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,.55);pointer-events:none;z-index:5}
+@media(prefers-reduced-motion:reduce){.gsap-shine::after{animation:none;display:none}}
+
+/* ── Menú móvil: fondo difuminado detrás del panel ── */
+#mobMenuBackdrop{position:fixed;inset:0;top:68px;background:rgba(10,10,11,.35);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);z-index:998;opacity:0;pointer-events:none;transition:opacity .25s ease}
+#mobMenuBackdrop.show{pointer-events:auto}
+body.has-promo #mobMenuBackdrop{top:106px}
+
+/* ── Badges: flotación muy sutil ── */
+.tag{animation:tagFloat 3.4s ease-in-out infinite}
+.tag-out{animation:none}
+@keyframes tagFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+@media(prefers-reduced-motion:reduce){.tag{animation:none}}
+
 /* Misma vitrina giratoria, ahora también en el visor grande del modal (1 sola foto) */
 #mImgWrap.single-tilt .modal-img{animation:pcTilt 4.2s ease-in-out infinite;will-change:transform}
 #mImgWrap.single-tilt::before{
@@ -445,11 +475,18 @@ body.has-promo .hero{padding-top:126px}
 .modal-img-wrap.has-multi .mimg-arrow{display:flex}
 .mimg-arrow-l{left:12px}
 .mimg-arrow-r{right:12px}
-.mimg-hint{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);color:#fff;font-size:.72rem;font-weight:600;padding:6px 14px;border-radius:20px;display:none;pointer-events:none;transition:opacity .3s ease;letter-spacing:.02em}
-.modal-img-wrap.has-multi .mimg-hint{display:block}
+.mimg-hint{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);color:#fff;font-size:.72rem;font-weight:600;padding:6px 14px;border-radius:20px;display:block;pointer-events:none;transition:opacity .3s ease;letter-spacing:.02em}
 .mimg-hint.hide{opacity:0}
 .mimg-dots{position:absolute;top:12px;left:50%;transform:translateX(-50%);display:none;gap:5px;z-index:2}
 .modal-img-wrap.has-multi .mimg-dots{display:flex}
+.mimg-zoom{position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.92);border:1px solid var(--s2);color:var(--k);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.15);z-index:3;transition:transform .2s ease,background .2s ease}
+.mimg-zoom:hover{transform:scale(1.08);background:#fff}
+.modal-img-wrap.zoomed{cursor:zoom-out;touch-action:none}
+.modal-img-wrap.zoomed .mimg-zoom{color:var(--r);border-color:var(--r)}
+.modal-img-wrap:not(.zoomed){cursor:zoom-in}
+.modal-img-wrap.has-multi:not(.zoomed){cursor:grab}
+.modal-img-wrap.has-multi.dragging{cursor:grabbing}
+#mImg{will-change:transform}
 .mimg-dots .mdot{width:6px;height:6px;border-radius:50%;background:rgba(0,0,0,.2);transition:background var(--t),transform var(--t)}
 .mimg-dots .mdot.on{background:var(--r);transform:scale(1.3)}
 .modal-img-tag{display:none}
@@ -601,6 +638,14 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 </head>
 <body>
+
+<!-- PANTALLA DE CARGA -->
+<div id="loadScreen" aria-hidden="true">
+  <div class="load-inner">
+    <img id="loadLogo" alt="Bogotá Bling"/>
+    <div class="load-bar"><div class="load-bar-fill" id="loadBarFill"></div></div>
+  </div>
+</div>
 
 <!-- NAV -->
 <div class="promo-bar" id="promoBar"></div>
@@ -920,7 +965,10 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{
       <img class="modal-img" id="mImg" src="" alt="" loading="eager" draggable="false"/>
       <button class="mimg-arrow mimg-arrow-l" id="mImgPrevBtn" aria-label="Foto anterior">‹</button>
       <button class="mimg-arrow mimg-arrow-r" id="mImgNextBtn" aria-label="Foto siguiente">›</button>
-      <div class="mimg-hint" id="mImgHint">↔ Arrastra para girar</div>
+      <button class="mimg-zoom" id="mZoomBtn" aria-label="Acercar imagen" title="Acercar imagen">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/><path d="M11 8v6M8 11h6"/></svg>
+      </button>
+      <div class="mimg-hint" id="mImgHint">↔ Arrastra para girar · doble toque para zoom</div>
       <div class="mimg-dots" id="mImgDots"></div>
     </div>
     <!-- Info debajo de la imagen -->
@@ -1103,8 +1151,8 @@ async function loadCatalog(){
 
   const statProductEl = document.getElementById('statProductCount');
   const statCategoryEl = document.getElementById('statCategoryCount');
-  if (statProductEl) statProductEl.textContent = P.length.toLocaleString('es-CO') + (P.length > 0 ? '+' : '');
-  if (statCategoryEl) statCategoryEl.textContent = rootGroups.length;
+  if (statProductEl) animateCounter(statProductEl, P.length, P.length > 0 ? '+' : '');
+  if (statCategoryEl) animateCounter(statCategoryEl, rootGroups.length, '');
 
   // Insertar secciones dentro de #catalogo (entre Destacados y Novedades)
   const catalogoDiv = document.getElementById('catalogo');
@@ -1251,7 +1299,7 @@ function rGrid(list,gid){
 <div class="pc-img"><img class="pc-img-a" src="${p.i}" alt="${p.n}" loading="lazy"/><img class="pc-img-b" alt=""/>${spin}<div class="pc-tags">${badge}</div><div class="pc-hover"><span>Ver detalles</span></div></div>
 <div class="pc-body"><p class="pc-cat">${CL[p.c]||p.c}</p><h3 class="pc-name">${p.n}</h3>
 <div class="pc-foot"><span class="pc-price">${p.p}</span>
-<button class="pc-btn" onclick="event.stopPropagation();window.open('https://wa.me/${WA}?text=${waT}','_blank')">${p.so?'Consultar':'Preguntar'}</button>
+<button class="pc-btn gsap-shine" onclick="event.stopPropagation();window.open('https://wa.me/${WA}?text=${waT}','_blank')">${p.so?'Consultar':'Preguntar'}</button>
 </div></div></article>`;
   }).join('');
   g.querySelectorAll('.reveal').forEach(e=>RO.observe(e));
@@ -1334,7 +1382,11 @@ function setupRotation(images){
   const hasMulti = rotFrames.length > 1;
   wrap.classList.toggle('has-multi', hasMulti);
   wrap.classList.toggle('single-tilt', !hasMulti && !prefersReducedMotion);
+  document.getElementById('mImgHint').textContent = hasMulti
+    ? '↔ Arrastra para girar · doble toque para zoom'
+    : 'Doble toque o pellizca para hacer zoom';
   document.getElementById('mImgHint').classList.remove('hide');
+  resetZoom();
   renderRotFrame();
   renderRotDots();
 }
@@ -1354,6 +1406,48 @@ function rotGoTo(i){
   renderRotDots();
 }
 
+// ───────── ZOOM DE IMAGEN EN EL MODAL (doble toque, pellizco, rueda) ─────────
+// No reemplaza el giro por arrastre: cuando la foto está en zoom, arrastrar
+// hace panorámica; cuando no, arrastrar sigue rotando entre fotos como antes.
+let zoomScale = 1, zoomX = 0, zoomY = 0, zoomWasTilt = false;
+let panDragging = false, panStartX = 0, panStartY = 0, panOrigX = 0, panOrigY = 0;
+const pinchPointers = new Map();
+let pinchStartDist = 0, pinchStartScale = 1;
+
+function resetZoom(){
+  zoomScale = 1; zoomX = 0; zoomY = 0;
+  const img = document.getElementById('mImg');
+  const wrap = document.getElementById('mImgWrap');
+  if (window.gsap) gsap.set(img, { x:0, y:0, scale:1 }); else img.style.transform = '';
+  wrap.classList.remove('zoomed');
+  if (zoomWasTilt) wrap.classList.add('single-tilt');
+}
+function applyZoom(){
+  const img = document.getElementById('mImg');
+  const wrap = document.getElementById('mImgWrap');
+  zoomScale = Math.min(3, Math.max(1, zoomScale));
+  if (zoomScale <= 1.02){ resetZoom(); return; }
+  const rect = wrap.getBoundingClientRect();
+  const maxX = (rect.width * (zoomScale - 1)) / 2;
+  const maxY = (rect.height * (zoomScale - 1)) / 2;
+  zoomX = Math.min(maxX, Math.max(-maxX, zoomX));
+  zoomY = Math.min(maxY, Math.max(-maxY, zoomY));
+  wrap.classList.add('zoomed');
+  if (window.gsap) gsap.to(img, { x:zoomX, y:zoomY, scale:zoomScale, duration:.22, ease:'power2.out', overwrite:true });
+  else img.style.transform = `translate(${zoomX}px,${zoomY}px) scale(${zoomScale})`;
+}
+function toggleZoomAt(clientX, clientY){
+  const wrap = document.getElementById('mImgWrap');
+  if (zoomScale > 1.02){ resetZoom(); return; }
+  zoomWasTilt = wrap.classList.contains('single-tilt');
+  wrap.classList.remove('single-tilt');
+  const rect = wrap.getBoundingClientRect();
+  zoomScale = 2.3;
+  zoomX = -((clientX - rect.left) - rect.width / 2) * (zoomScale - 1);
+  zoomY = -((clientY - rect.top) - rect.height / 2) * (zoomScale - 1);
+  applyZoom();
+}
+
 (function initRotationDrag(){
   const wrap = document.getElementById('mImgWrap');
   const hint = document.getElementById('mImgHint');
@@ -1362,6 +1456,22 @@ function rotGoTo(i){
   const dismissHint = () => hint.classList.add('hide');
 
   wrap.addEventListener('pointerdown', e=>{
+    dismissHint();
+    pinchPointers.set(e.pointerId, { x:e.clientX, y:e.clientY });
+    if (pinchPointers.size === 2){
+      rotDragging = false; wrap.classList.remove('dragging');
+      const pts = [...pinchPointers.values()];
+      pinchStartDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1;
+      pinchStartScale = zoomScale;
+      return;
+    }
+    if (zoomScale > 1.02){
+      panDragging = true;
+      panStartX = e.clientX; panStartY = e.clientY;
+      panOrigX = zoomX; panOrigY = zoomY;
+      wrap.setPointerCapture(e.pointerId);
+      return;
+    }
     if (rotFrames.length <= 1) return;
     rotDragging = true;
     rotStartX = e.clientX;
@@ -1370,6 +1480,21 @@ function rotGoTo(i){
     wrap.setPointerCapture(e.pointerId);
   });
   wrap.addEventListener('pointermove', e=>{
+    if (pinchPointers.has(e.pointerId)) pinchPointers.set(e.pointerId, { x:e.clientX, y:e.clientY });
+    if (pinchPointers.size === 2){
+      const pts = [...pinchPointers.values()];
+      const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1;
+      zoomScale = pinchStartScale * (dist / pinchStartDist);
+      if (zoomScale > 1.02) { zoomWasTilt = zoomWasTilt || wrap.classList.contains('single-tilt'); wrap.classList.remove('single-tilt'); }
+      applyZoom();
+      return;
+    }
+    if (panDragging){
+      zoomX = panOrigX + (e.clientX - panStartX);
+      zoomY = panOrigY + (e.clientY - panStartY);
+      applyZoom();
+      return;
+    }
     if (!rotDragging) return;
     dismissHint();
     const dx = e.clientX - rotStartX;
@@ -1377,9 +1502,34 @@ function rotGoTo(i){
     rotGoTo(rotStartIndex - framesMoved);
   });
   ['pointerup','pointercancel','pointerleave'].forEach(evt=>{
-    wrap.addEventListener(evt, ()=>{ rotDragging = false; wrap.classList.remove('dragging'); });
+    wrap.addEventListener(evt, e=>{
+      pinchPointers.delete(e.pointerId);
+      rotDragging = false; wrap.classList.remove('dragging');
+      panDragging = false;
+    });
   });
+  wrap.addEventListener('dblclick', e=>{ dismissHint(); toggleZoomAt(e.clientX, e.clientY); });
+  wrap.addEventListener('wheel', e=>{
+    if (!e.ctrlKey && zoomScale <= 1.02) return; // deja el scroll normal de la página intacto
+    e.preventDefault();
+    dismissHint();
+    const rect = wrap.getBoundingClientRect();
+    const wasZoomed = zoomScale > 1.02;
+    zoomScale += (e.deltaY < 0 ? 1 : -1) * 0.25;
+    if (!wasZoomed && zoomScale > 1.02){
+      zoomWasTilt = wrap.classList.contains('single-tilt');
+      wrap.classList.remove('single-tilt');
+      zoomX = -((e.clientX - rect.left) - rect.width / 2) * (Math.max(zoomScale,1) - 1);
+      zoomY = -((e.clientY - rect.top) - rect.height / 2) * (Math.max(zoomScale,1) - 1);
+    }
+    applyZoom();
+  }, { passive:false });
 
+  document.getElementById('mZoomBtn').addEventListener('click', ()=>{
+    dismissHint();
+    const rect = wrap.getBoundingClientRect();
+    toggleZoomAt(rect.left + rect.width/2, rect.top + rect.height/2);
+  });
   document.getElementById('mImgPrevBtn').addEventListener('click', ()=>{ dismissHint(); rotGoTo(rotIndex - 1); });
   document.getElementById('mImgNextBtn').addEventListener('click', ()=>{ dismissHint(); rotGoTo(rotIndex + 1); });
 })();
@@ -1388,7 +1538,18 @@ document.getElementById('mBg').addEventListener('click',function(e){if(e.target=
 document.addEventListener('keydown',e=>{if(e.key==='Escape')CM();});
 
 // Reveal
-const RO=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');RO.unobserve(e.target);}});},{threshold:.07,rootMargin:'0px 0px -16px 0px'});
+const RO=new IntersectionObserver(es=>{es.forEach(e=>{
+  if(e.isIntersecting){
+    e.target.classList.add('in');
+    if (window.gsap){
+      gsap.fromTo(e.target,
+        { opacity:0, y:26, scale:.97 },
+        { opacity:1, y:0, scale:1, duration:.7, ease:'power3.out', clearProps:'transform' }
+      );
+    }
+    RO.unobserve(e.target);
+  }
+});},{threshold:.07,rootMargin:'0px 0px -16px 0px'});
 
 // ───────── ROTACIÓN AUTOMÁTICA DE FOTOS EN LAS TARJETAS (estilo turntable) ─────────
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1711,6 +1872,135 @@ function openLightboxReview(src){
   document.body.appendChild(bg);
 }
 
+</script>
+
+<!-- ───────── GSAP: experiencia visual premium (no toca lógica ni datos) ───────── -->
+<script>
+(function(){
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (window.gsap && window.ScrollTrigger) gsap.registerPlugin(ScrollTrigger);
+
+  // ───────── Contador animado (productos / categorías en el hero) ─────────
+  window.animateCounter = function(el, target, suffix){
+    suffix = suffix || '';
+    if (reduceMotion || !window.gsap){
+      el.textContent = target.toLocaleString('es-CO') + suffix;
+      return;
+    }
+    const obj = { v: 0 };
+    gsap.to(obj, {
+      v: target, duration: 1.4, ease: 'power2.out',
+      onUpdate: () => { el.textContent = Math.round(obj.v).toLocaleString('es-CO') + suffix; },
+      onComplete: () => { el.textContent = target.toLocaleString('es-CO') + suffix; }
+    });
+  };
+
+  // ───────── Pantalla de carga ─────────
+  (function loadingScreen(){
+    const screen = document.getElementById('loadScreen');
+    if (!screen) return;
+    const logo = document.getElementById('loadLogo');
+    const fill = document.getElementById('loadBarFill');
+    const navLogo = document.querySelector('.nav-logo img');
+    if (navLogo && logo) logo.src = navLogo.src;
+
+    let done = false;
+    const finish = () => {
+      if (done) return; done = true;
+      if (window.gsap && !reduceMotion){
+        gsap.to(fill, { width:'100%', duration:.22, ease:'power1.out', onComplete:()=>{
+          gsap.to(screen, { opacity:0, duration:.45, ease:'power2.out', onComplete:()=>{
+            screen.style.display = 'none';
+          }});
+        }});
+      } else {
+        screen.style.transition = 'opacity .3s ease';
+        screen.style.opacity = '0';
+        setTimeout(()=>{ screen.style.display = 'none'; }, 300);
+      }
+    };
+
+    if (window.gsap && !reduceMotion && logo && fill){
+      gsap.to(logo, { opacity:1, scale:1, duration:.5, ease:'power2.out' });
+      gsap.to(fill, { width:'82%', duration:1.2, ease:'power1.inOut' });
+    } else if (fill){
+      fill.style.width = '90%';
+      if (logo) logo.style.opacity = '1';
+    }
+
+    if (document.readyState === 'complete') setTimeout(finish, 320);
+    else window.addEventListener('load', () => setTimeout(finish, 220));
+    setTimeout(finish, 2200); // nunca bloquear más de ~2.2s
+  })();
+
+  // ───────── Hero: entrada escalonada ─────────
+  if (window.gsap && !reduceMotion){
+    const tl = gsap.timeline({ delay: .35, defaults: { ease: 'power3.out' } });
+    tl.from('.logo-hero', { opacity:0, scale:.88, duration:.8 })
+      .from('.hero-eye', { opacity:0, y:14, duration:.5 }, '-=.45')
+      .from('.hero-h1', { opacity:0, y:22, duration:.7 }, '-=.3')
+      .from('.hero-quote', { opacity:0, y:14, duration:.5 }, '-=.35')
+      .from('.hero-sub', { opacity:0, y:14, duration:.5 }, '-=.3')
+      .from('.hero-btns .btn', { opacity:0, y:16, stagger:.1, duration:.5 }, '-=.25')
+      .from('.stats > *', { opacity:0, y:10, stagger:.06, duration:.4 }, '-=.2');
+  }
+
+  // ───────── Botones: brillo que recorre lentamente + ripple al tocar ─────────
+  const shineTargets = 'a.btn, .pc-btn, .modal-wa, .btn-r, .btn-out, .btn-wa';
+  document.querySelectorAll(shineTargets).forEach(btn => btn.classList.add('gsap-shine'));
+  document.body.addEventListener('click', (e) => {
+    const btn = e.target.closest(shineTargets + ', .mimg-zoom, .modal-copy-link');
+    if (!btn) return;
+    const rect = btn.getBoundingClientRect();
+    const ripple = document.createElement('span');
+    ripple.className = 'btn-ripple';
+    const size = Math.max(rect.width, rect.height) * 1.4;
+    ripple.style.width = ripple.style.height = size + 'px';
+    ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
+    ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+    const prevPos = getComputedStyle(btn).position;
+    if (prevPos === 'static') btn.style.position = 'relative';
+    btn.style.overflow = btn.style.overflow || 'hidden';
+    btn.appendChild(ripple);
+    if (window.gsap && !reduceMotion){
+      gsap.fromTo(ripple, { opacity:.35, scale:0 }, { opacity:0, scale:1, duration:.55, ease:'power2.out', onComplete:()=>ripple.remove() });
+    } else {
+      setTimeout(()=>ripple.remove(), 550);
+    }
+  }, true); // captura: así el ripple también funciona en botones que detienen la propagación (p.ej. pc-btn)
+
+  // ───────── Menú móvil: fondo difuminado + fade/slide con GSAP ─────────
+  const mob = document.getElementById('mobMenu');
+  const ham = document.getElementById('ham');
+  if (mob && ham){
+    const backdrop = document.createElement('div');
+    backdrop.id = 'mobMenuBackdrop';
+    document.body.appendChild(backdrop);
+    backdrop.addEventListener('click', () => { mob.classList.remove('open'); ham.classList.remove('open'); });
+
+    const mo = new MutationObserver(() => {
+      const isOpen = mob.classList.contains('open');
+      backdrop.classList.toggle('show', isOpen);
+      if (window.gsap && !reduceMotion){
+        if (isOpen){
+          gsap.fromTo(backdrop, { opacity:0 }, { opacity:1, duration:.28, ease:'power2.out' });
+          gsap.fromTo(mob, { opacity:0, y:-10 }, { opacity:1, y:0, duration:.32, ease:'power3.out' });
+        } else {
+          gsap.to(backdrop, { opacity:0, duration:.22, ease:'power2.in' });
+        }
+      }
+    });
+    mo.observe(mob, { attributes:true, attributeFilter:['class'] });
+  }
+
+  // ───────── Parallax extremadamente sutil en imágenes del hero/producto ─────────
+  if (window.gsap && window.ScrollTrigger && !reduceMotion){
+    gsap.to('.logo-hero', {
+      y: 18, ease: 'none',
+      scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true }
+    });
+  }
+})();
 </script>
 </body>
 </html>
