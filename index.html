@@ -276,17 +276,6 @@ body.has-promo .hero{padding-top:126px}
 @keyframes pcSpin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.pc-spin{display:none}}
 
-/* ── ROTACIÓN 3D REAL: la foto gira sobre su eje como un objeto en vitrina.
-   Si el producto tiene varias fotos, cambia a la siguiente justo cuando el
-   giro pasa por el borde (90°/270°, momento en que se ve de canto) ── */
-.pc-img{perspective:900px}
-.pc-img-a,.pc-img-b{backface-visibility:hidden;will-change:transform}
-.pc-img.spin3d .pc-img-a{animation:pcSpin360 5.5s linear infinite;animation-play-state:paused}
-.pc-img.spin3d.in-view .pc-img-a{animation-play-state:running}
-.pc:hover .pc-img.spin3d .pc-img-a{animation-play-state:paused}
-@keyframes pcSpin360{from{transform:rotateY(0deg)}to{transform:rotateY(360deg)}}
-@media(prefers-reduced-motion:reduce){.pc-img.spin3d .pc-img-a{animation:none}}
-
 /* ── PANTALLA DE CARGA ── */
 #loadScreen{position:fixed;inset:0;z-index:9999;background:#0a0a0b;display:flex;align-items:center;justify-content:center}
 .load-inner{display:flex;flex-direction:column;align-items:center;gap:22px}
@@ -313,8 +302,6 @@ body.has-promo #mobMenuBackdrop{top:106px}
 /* Misma rotación 3D, ahora también en el visor grande del modal (1 sola foto) */
 #mImgWrap{perspective:900px}
 #mImgWrap .modal-img{backface-visibility:hidden}
-#mImgWrap.spin3d .modal-img{animation:pcSpin360 5.5s linear infinite;will-change:transform}
-@media(prefers-reduced-motion:reduce){#mImgWrap.spin3d .modal-img{animation:none}}
 
 /* ── SKELETON LOADING (mientras cargan productos/categorías desde Supabase) ── */
 @keyframes pcShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
@@ -1308,9 +1295,8 @@ function rGrid(list,gid){
     if (p.so) badge = '<span class="tag tag-out">Agotado</span>';
     else if (typeof p.stock === 'number' && p.stock > 0 && p.stock <= 2) badge += `<span class="tag tag-low">¡Últimas ${p.stock}!</span>`;
     const waT=encodeURIComponent('Hola, vi este producto en Bogotá Bling y me gustaría recibir más información. Producto: '+p.n);
-    const spin = prefersReducedMotion ? '' : '<span class="pc-spin">360°</span>';
     return`<article class="pc reveal${p.so?' is-out':''}" style="transition-delay:${i*32}ms" data-gid="${gid}" data-idx="${i}" onclick="OM('${gid}',${i})">
-<div class="pc-img"><img class="pc-img-a" src="${p.i}" alt="${p.n}" loading="lazy"/><img class="pc-img-b" alt=""/>${spin}<div class="pc-tags">${badge}</div><div class="pc-hover"><span>Ver detalles</span></div></div>
+<div class="pc-img"><img class="pc-img-a" src="${p.i}" alt="${p.n}" loading="lazy"/><div class="pc-tags">${badge}</div><div class="pc-hover"><span>Ver detalles</span></div></div>
 <div class="pc-body"><p class="pc-cat">${CL[p.c]||p.c}</p><h3 class="pc-name">${p.n}</h3>
 <div class="pc-foot"><span class="pc-price">${p.p}</span>
 <button class="pc-btn" onclick="event.stopPropagation();window.open('https://wa.me/${WA}?text=${waT}','_blank')">${p.so?'Consultar':'Preguntar'}</button>
@@ -1318,8 +1304,6 @@ function rGrid(list,gid){
   }).join('');
   g.querySelectorAll('.reveal').forEach(e=>RO.observe(e));
   g.querySelectorAll('.pc').forEach(el=>{
-    const p = list[Number(el.dataset.idx)];
-    if (p) initCardRotation(el, p.imgs);
     attachTilt(el);
   });
 }
@@ -1566,16 +1550,8 @@ const RO=new IntersectionObserver(es=>{es.forEach(e=>{
   }
 });},{threshold:.07,rootMargin:'0px 0px -16px 0px'});
 
-// ───────── ROTACIÓN 3D REAL DE FOTOS EN LAS TARJETAS ─────────
+// ───────── EFECTOS DE LAS TARJETAS ─────────
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-const cardRotationObserver = prefersReducedMotion ? null : new IntersectionObserver(es=>{
-  es.forEach(e=>{
-    const el = e.target;
-    const spinWrap = el.querySelector('.pc-img.spin3d');
-    if (spinWrap) spinWrap.classList.toggle('in-view', e.isIntersecting);
-    if (el._rotImgs && el._rotImgs.length > 1) { e.isIntersecting ? startCardRotation(el) : stopCardRotation(el); }
-  });
-},{threshold:.15,rootMargin:'0px 0px -5% 0px'});
 
 // Tilt magnético 3D en las tarjetas (solo con mouse/trackpad, no en táctil)
 const hasFinePointer = window.matchMedia('(pointer:fine)').matches;
@@ -1596,40 +1572,8 @@ function attachTilt(card){
   });
   card.addEventListener('mouseleave', ()=>{ qx(0); qy(0); qz(0); });
 }
-
-function initCardRotation(el, imgs){
-  if (prefersReducedMotion || !imgs || !imgs.length) return;
-  const wrap = el.querySelector('.pc-img');
-  if (!wrap) return;
-  wrap.classList.add('spin3d');
-  if (imgs.length >= 2){
-    imgs.forEach(src=>{ const im = new Image(); im.src = src; }); // precarga para que el cambio de foto sea instantáneo
-    el._rotImgs = imgs;
-    el._rotIdx = 0;
-  }
-  cardRotationObserver.observe(el);
-}
-// El giro en sí lo hace la animación CSS (pcSpin360, 5.5s por vuelta); acá solo
-// cambiamos la foto en el instante en que se ve "de canto" (mitad del giro),
-// que es cuando el cambio es invisible para el ojo.
-function startCardRotation(el){
-  if (el._rotTimer || document.hidden) return;
-  const imgs = el._rotImgs;
-  const layer = el.querySelector('.pc-img-a');
-  el._rotTimer = setInterval(()=>{
-    if (document.hidden) return;
-    el._rotIdx = (el._rotIdx + 1) % imgs.length;
-    layer.src = imgs[el._rotIdx];
-  }, 2750); // media vuelta de los 5.5s de la animación CSS
-}
-function stopCardRotation(el){
-  if (el._rotTimer){ clearInterval(el._rotTimer); el._rotTimer = null; }
-}
-document.addEventListener('visibilitychange', ()=>{
-  if (document.hidden) document.querySelectorAll('.pc').forEach(stopCardRotation);
-  else document.querySelectorAll('.pc').forEach(el=>{ if (el._rotImgs && el._rotImgs.length>1 && !el._rotTimer) startCardRotation(el); });
-});
 setTimeout(()=>document.querySelectorAll('.reveal').forEach(e=>RO.observe(e)),80);
+
 
 // ───────── FAQ como modal, abierto desde el menú ─────────
 function openFaq(){
