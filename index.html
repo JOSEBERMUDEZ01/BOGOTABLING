@@ -276,23 +276,16 @@ body.has-promo .hero{padding-top:126px}
 @keyframes pcSpin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.pc-spin{display:none}}
 
-/* ── VITRINA GIRATORIA para productos con 1 sola foto (sin fotos extra, puro CSS) ── */
-.pc-img.single-tilt{perspective:700px}
-.pc-img.single-tilt .pc-img-a{transition:none;animation:pcTilt 4.2s ease-in-out infinite;animation-play-state:paused;will-change:transform}
-.pc-img.single-tilt.in-view .pc-img-a{animation-play-state:running}
-@keyframes pcTilt{
-  0%,100%{transform:perspective(700px) rotateY(-9deg) scale(1.045)}
-  50%{transform:perspective(700px) rotateY(9deg) scale(1.045)}
-}
-.pc-img.single-tilt::before{
-  content:'';position:absolute;inset:0;z-index:2;pointer-events:none;
-  background:linear-gradient(115deg,transparent 42%,rgba(255,255,255,.5) 50%,transparent 58%);
-  background-size:260% 260%;background-position:200% 0;
-  animation:pcShine 4.2s ease-in-out infinite;animation-play-state:paused;
-}
-.pc-img.single-tilt.in-view::before{animation-play-state:running}
-@keyframes pcShine{0%{background-position:220% 0}100%{background-position:-120% 0}}
-@media(prefers-reduced-motion:reduce){.pc-img.single-tilt .pc-img-a,.pc-img.single-tilt::before{animation:none}}
+/* ── ROTACIÓN 3D REAL: la foto gira sobre su eje como un objeto en vitrina.
+   Si el producto tiene varias fotos, cambia a la siguiente justo cuando el
+   giro pasa por el borde (90°/270°, momento en que se ve de canto) ── */
+.pc-img{perspective:900px}
+.pc-img-a,.pc-img-b{backface-visibility:hidden;will-change:transform}
+.pc-img.spin3d .pc-img-a{animation:pcSpin360 5.5s linear infinite;animation-play-state:paused}
+.pc-img.spin3d.in-view .pc-img-a{animation-play-state:running}
+.pc:hover .pc-img.spin3d .pc-img-a{animation-play-state:paused}
+@keyframes pcSpin360{from{transform:rotateY(0deg)}to{transform:rotateY(360deg)}}
+@media(prefers-reduced-motion:reduce){.pc-img.spin3d .pc-img-a{animation:none}}
 
 /* ── PANTALLA DE CARGA ── */
 #loadScreen{position:fixed;inset:0;z-index:9999;background:#0a0a0b;display:flex;align-items:center;justify-content:center}
@@ -302,16 +295,9 @@ body.has-promo .hero{padding-top:126px}
 .load-bar-fill{width:0%;height:100%;background:var(--r);border-radius:2px}
 @media(prefers-reduced-motion:reduce){#loadScreen{transition:none!important}#loadLogo{opacity:1;transform:none}}
 
-/* ── Botones premium: brillo que recorre + ripple ── */
-.gsap-shine{position:relative;overflow:hidden}
-.gsap-shine::after{
-  content:'';position:absolute;top:0;left:-60%;width:40%;height:100%;
-  background:linear-gradient(115deg,transparent 0%,rgba(255,255,255,.35) 50%,transparent 100%);
-  transform:skewX(-20deg);animation:btnShine 3.2s ease-in-out infinite;pointer-events:none
-}
-@keyframes btnShine{0%{left:-60%}35%{left:120%}100%{left:120%}}
+/* ── Botones premium: ripple al tocar (sin brillo) ── */
 .btn-ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,.55);pointer-events:none;z-index:5}
-@media(prefers-reduced-motion:reduce){.gsap-shine::after{animation:none;display:none}}
+
 
 /* ── Menú móvil: fondo difuminado detrás del panel ── */
 #mobMenuBackdrop{position:fixed;inset:0;top:68px;background:rgba(10,10,11,.35);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);z-index:998;opacity:0;pointer-events:none;transition:opacity .25s ease}
@@ -324,14 +310,11 @@ body.has-promo #mobMenuBackdrop{top:106px}
 @keyframes tagFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
 @media(prefers-reduced-motion:reduce){.tag{animation:none}}
 
-/* Misma vitrina giratoria, ahora también en el visor grande del modal (1 sola foto) */
-#mImgWrap.single-tilt .modal-img{animation:pcTilt 4.2s ease-in-out infinite;will-change:transform}
-#mImgWrap.single-tilt::before{
-  content:'';position:absolute;inset:0;z-index:2;pointer-events:none;border-radius:inherit;
-  background:linear-gradient(115deg,transparent 42%,rgba(255,255,255,.5) 50%,transparent 58%);
-  background-size:260% 260%;background-position:200% 0;animation:pcShine 4.2s ease-in-out infinite;
-}
-@media(prefers-reduced-motion:reduce){#mImgWrap.single-tilt .modal-img,#mImgWrap.single-tilt::before{animation:none}}
+/* Misma rotación 3D, ahora también en el visor grande del modal (1 sola foto) */
+#mImgWrap{perspective:900px}
+#mImgWrap .modal-img{backface-visibility:hidden}
+#mImgWrap.spin3d .modal-img{animation:pcSpin360 5.5s linear infinite;will-change:transform}
+@media(prefers-reduced-motion:reduce){#mImgWrap.spin3d .modal-img{animation:none}}
 
 /* ── SKELETON LOADING (mientras cargan productos/categorías desde Supabase) ── */
 @keyframes pcShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
@@ -408,6 +391,14 @@ body.has-promo #mobMenuBackdrop{top:106px}
 .faq-item summary::after{content:'+';position:absolute;right:0;top:50%;transform:translateY(-50%);font-size:1.3rem;color:var(--r);font-weight:400;transition:transform var(--t)}
 .faq-item[open] summary::after{transform:translateY(-50%) rotate(45deg)}
 .faq-item p{font-size:.86rem;color:var(--k3);line-height:1.7;padding:0 0 20px}
+
+/* ── FAQ como modal (se abre desde el menú, ya no está fijo en la página) ── */
+.faq-modal-bg{position:fixed;inset:0;z-index:2100;background:rgba(6,6,7,.82);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .3s ease}
+.faq-modal-bg.open{opacity:1;pointer-events:all}
+.faq-modal-card{position:relative;background:#fff;border-radius:20px;max-width:760px;width:100%;max-height:86vh;overflow-y:auto;padding:38px 34px 30px;box-shadow:0 40px 100px rgba(0,0,0,.5)}
+.faq-modal-close{position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:50%;background:var(--s1);border:1px solid var(--s2);color:var(--k);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s ease;z-index:2}
+.faq-modal-close:hover{background:var(--r);color:#fff;border-color:var(--r)}
+@media(max-width:600px){.faq-modal-card{padding:30px 18px 22px;border-radius:16px}}
 .faq-cta{text-align:center;margin-top:36px;padding-top:32px;border-top:1px solid var(--s2)}
 .faq-cta p{font-size:.95rem;font-weight:700;color:var(--k);margin-bottom:16px}
 
@@ -456,6 +447,7 @@ body.has-promo #mobMenuBackdrop{top:106px}
 /* ── MODAL FULL-VIEW ── */
 .modal-bg{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.95);display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .28s;overflow:hidden}
 .modal-bg.open{opacity:1;pointer-events:all}
+.modal-card{display:flex;flex-direction:column;width:100%;height:100%;min-height:0}
 @keyframes mIn{from{transform:scale(.95);opacity:0}to{transform:none;opacity:1}}
 /* Top bar */
 .modal-topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(0,0,0,.6);backdrop-filter:blur(12px);flex-shrink:0;z-index:10;gap:12px}
@@ -517,6 +509,20 @@ body.has-promo #mobMenuBackdrop{top:106px}
   .modal-name{font-size:.88rem}
   .modal-body{padding:16px 16px 10px}
   .modal-name-full{font-size:1rem}
+}
+
+/* Escritorio: tarjeta centrada de dos columnas (foto | info), en vez de pantalla completa */
+@media(min-width:900px){
+  .modal-bg{align-items:center;justify-content:center;padding:36px;background:rgba(6,6,7,.86);backdrop-filter:blur(6px)}
+  .modal-card{
+    width:100%;max-width:1080px;height:auto;max-height:86vh;
+    background:#111;border-radius:20px;overflow:hidden;
+    box-shadow:0 40px 100px rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.08);
+  }
+  .modal-viewer{flex-direction:row;overflow:hidden;align-items:stretch}
+  .modal-img-wrap{width:56%;height:100%;flex-shrink:0;align-items:center}
+  .modal-img{width:auto;height:100%;max-width:100%;object-fit:contain}
+  .modal-body{width:44%;height:100%;overflow-y:auto;border-top:none;border-left:2px solid rgba(200,16,46,.25);padding:28px 30px 20px}
 }
 
 /* ── RESPONSIVE ── */
@@ -843,8 +849,9 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{
 <hr class="divider"/>
 
 <!-- PREGUNTAS FRECUENTES -->
-<section class="section" id="faq">
-  <div class="container" style="max-width:820px">
+<div class="faq-modal-bg" id="faqBg">
+  <div class="faq-modal-card">
+    <button class="faq-modal-close" onclick="closeFaq()" aria-label="Cerrar">✕</button>
     <div class="sec-head">
       <p class="sec-eye">Resolvemos tus dudas</p>
       <h2 class="sec-h2">Preguntas frecuentes</h2>
@@ -881,7 +888,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{
       <a href="https://wa.me/573177810009?text=Hola%2C%20tengo%20una%20pregunta%20sobre%20Bogot%C3%A1%20Bling" target="_blank" class="btn btn-r">Pregúntanos por WhatsApp</a>
     </div>
   </div>
-</section>
+</div>
 
 <hr class="divider"/>
 
@@ -951,6 +958,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{
 
 <!-- MODAL FULL VIEWER -->
 <div class="modal-bg" id="mBg">
+<div class="modal-card">
   <!-- Top bar fija -->
   <div class="modal-topbar">
     <div class="modal-topbar-info">
@@ -1000,6 +1008,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{
       </div>
     </div>
   </div>
+</div>
 </div>
 
 <script>
@@ -1294,12 +1303,12 @@ function rGrid(list,gid){
     if (p.so) badge = '<span class="tag tag-out">Agotado</span>';
     else if (typeof p.stock === 'number' && p.stock > 0 && p.stock <= 2) badge += `<span class="tag tag-low">¡Últimas ${p.stock}!</span>`;
     const waT=encodeURIComponent('Hola, vi este producto en Bogotá Bling y me gustaría recibir más información. Producto: '+p.n);
-    const spin = (p.imgs && p.imgs.length > 1) ? '<span class="pc-spin">360°</span>' : '';
+    const spin = prefersReducedMotion ? '' : '<span class="pc-spin">360°</span>';
     return`<article class="pc reveal${p.so?' is-out':''}" style="transition-delay:${i*32}ms" data-gid="${gid}" data-idx="${i}" onclick="OM('${gid}',${i})">
 <div class="pc-img"><img class="pc-img-a" src="${p.i}" alt="${p.n}" loading="lazy"/><img class="pc-img-b" alt=""/>${spin}<div class="pc-tags">${badge}</div><div class="pc-hover"><span>Ver detalles</span></div></div>
 <div class="pc-body"><p class="pc-cat">${CL[p.c]||p.c}</p><h3 class="pc-name">${p.n}</h3>
 <div class="pc-foot"><span class="pc-price">${p.p}</span>
-<button class="pc-btn gsap-shine" onclick="event.stopPropagation();window.open('https://wa.me/${WA}?text=${waT}','_blank')">${p.so?'Consultar':'Preguntar'}</button>
+<button class="pc-btn" onclick="event.stopPropagation();window.open('https://wa.me/${WA}?text=${waT}','_blank')">${p.so?'Consultar':'Preguntar'}</button>
 </div></div></article>`;
   }).join('');
   g.querySelectorAll('.reveal').forEach(e=>RO.observe(e));
@@ -1381,7 +1390,7 @@ function setupRotation(images){
   const wrap = document.getElementById('mImgWrap');
   const hasMulti = rotFrames.length > 1;
   wrap.classList.toggle('has-multi', hasMulti);
-  wrap.classList.toggle('single-tilt', !hasMulti && !prefersReducedMotion);
+  wrap.classList.toggle('spin3d', !hasMulti && !prefersReducedMotion);
   document.getElementById('mImgHint').textContent = hasMulti
     ? '↔ Arrastra para girar · doble toque para zoom'
     : 'Doble toque o pellizca para hacer zoom';
@@ -1420,7 +1429,7 @@ function resetZoom(){
   const wrap = document.getElementById('mImgWrap');
   if (window.gsap) gsap.set(img, { x:0, y:0, scale:1 }); else img.style.transform = '';
   wrap.classList.remove('zoomed');
-  if (zoomWasTilt) wrap.classList.add('single-tilt');
+  if (zoomWasTilt) wrap.classList.add('spin3d');
 }
 function applyZoom(){
   const img = document.getElementById('mImg');
@@ -1439,8 +1448,8 @@ function applyZoom(){
 function toggleZoomAt(clientX, clientY){
   const wrap = document.getElementById('mImgWrap');
   if (zoomScale > 1.02){ resetZoom(); return; }
-  zoomWasTilt = wrap.classList.contains('single-tilt');
-  wrap.classList.remove('single-tilt');
+  zoomWasTilt = wrap.classList.contains('spin3d');
+  wrap.classList.remove('spin3d');
   const rect = wrap.getBoundingClientRect();
   zoomScale = 2.3;
   zoomX = -((clientX - rect.left) - rect.width / 2) * (zoomScale - 1);
@@ -1485,7 +1494,7 @@ function toggleZoomAt(clientX, clientY){
       const pts = [...pinchPointers.values()];
       const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1;
       zoomScale = pinchStartScale * (dist / pinchStartDist);
-      if (zoomScale > 1.02) { zoomWasTilt = zoomWasTilt || wrap.classList.contains('single-tilt'); wrap.classList.remove('single-tilt'); }
+      if (zoomScale > 1.02) { zoomWasTilt = zoomWasTilt || wrap.classList.contains('spin3d'); wrap.classList.remove('spin3d'); }
       applyZoom();
       return;
     }
@@ -1517,8 +1526,8 @@ function toggleZoomAt(clientX, clientY){
     const wasZoomed = zoomScale > 1.02;
     zoomScale += (e.deltaY < 0 ? 1 : -1) * 0.25;
     if (!wasZoomed && zoomScale > 1.02){
-      zoomWasTilt = wrap.classList.contains('single-tilt');
-      wrap.classList.remove('single-tilt');
+      zoomWasTilt = wrap.classList.contains('spin3d');
+      wrap.classList.remove('spin3d');
       zoomX = -((e.clientX - rect.left) - rect.width / 2) * (Math.max(zoomScale,1) - 1);
       zoomY = -((e.clientY - rect.top) - rect.height / 2) * (Math.max(zoomScale,1) - 1);
     }
@@ -1551,47 +1560,41 @@ const RO=new IntersectionObserver(es=>{es.forEach(e=>{
   }
 });},{threshold:.07,rootMargin:'0px 0px -16px 0px'});
 
-// ───────── ROTACIÓN AUTOMÁTICA DE FOTOS EN LAS TARJETAS (estilo turntable) ─────────
+// ───────── ROTACIÓN 3D REAL DE FOTOS EN LAS TARJETAS ─────────
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const cardRotationObserver = prefersReducedMotion ? null : new IntersectionObserver(es=>{
   es.forEach(e=>{
     const el = e.target;
-    if (el._rotImgs) { e.isIntersecting ? startCardRotation(el) : stopCardRotation(el); }
-    const tiltWrap = el.querySelector('.pc-img.single-tilt');
-    if (tiltWrap) tiltWrap.classList.toggle('in-view', e.isIntersecting);
+    const spinWrap = el.querySelector('.pc-img.spin3d');
+    if (spinWrap) spinWrap.classList.toggle('in-view', e.isIntersecting);
+    if (el._rotImgs && el._rotImgs.length > 1) { e.isIntersecting ? startCardRotation(el) : stopCardRotation(el); }
   });
 },{threshold:.15,rootMargin:'0px 0px -5% 0px'});
 
 function initCardRotation(el, imgs){
   if (prefersReducedMotion || !imgs || !imgs.length) return;
+  const wrap = el.querySelector('.pc-img');
+  if (!wrap) return;
+  wrap.classList.add('spin3d');
   if (imgs.length >= 2){
-    imgs.forEach(src=>{ const im = new Image(); im.src = src; }); // precarga para que el cruce sea instantáneo
+    imgs.forEach(src=>{ const im = new Image(); im.src = src; }); // precarga para que el cambio de foto sea instantáneo
     el._rotImgs = imgs;
     el._rotIdx = 0;
-    el._rotShowB = false;
-  } else {
-    // Solo 1 foto: vitrina giratoria con luz (puro CSS, sin fotos ni datos extra)
-    const wrap = el.querySelector('.pc-img');
-    if (wrap) wrap.classList.add('single-tilt');
   }
   cardRotationObserver.observe(el);
 }
+// El giro en sí lo hace la animación CSS (pcSpin360, 5.5s por vuelta); acá solo
+// cambiamos la foto en el instante en que se ve "de canto" (mitad del giro),
+// que es cuando el cambio es invisible para el ojo.
 function startCardRotation(el){
   if (el._rotTimer || document.hidden) return;
   const imgs = el._rotImgs;
-  if (!imgs || imgs.length < 2) return;
-  const layerA = el.querySelector('.pc-img-a');
-  const layerB = el.querySelector('.pc-img-b');
+  const layer = el.querySelector('.pc-img-a');
   el._rotTimer = setInterval(()=>{
     if (document.hidden) return;
     el._rotIdx = (el._rotIdx + 1) % imgs.length;
-    const nextLayer = el._rotShowB ? layerA : layerB;
-    const curLayer = el._rotShowB ? layerB : layerA;
-    nextLayer.src = imgs[el._rotIdx];
-    nextLayer.style.opacity = '1';
-    curLayer.style.opacity = '0';
-    el._rotShowB = !el._rotShowB;
-  }, 700);
+    layer.src = imgs[el._rotIdx];
+  }, 2750); // media vuelta de los 5.5s de la animación CSS
 }
 function stopCardRotation(el){
   if (el._rotTimer){ clearInterval(el._rotTimer); el._rotTimer = null; }
@@ -1601,6 +1604,29 @@ document.addEventListener('visibilitychange', ()=>{
   else document.querySelectorAll('.pc').forEach(el=>{ if (el._rotImgs && el._rotImgs.length>1 && !el._rotTimer) startCardRotation(el); });
 });
 setTimeout(()=>document.querySelectorAll('.reveal').forEach(e=>RO.observe(e)),80);
+
+// ───────── FAQ como modal, abierto desde el menú ─────────
+function openFaq(){
+  document.getElementById('faqBg').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeFaq(){
+  document.getElementById('faqBg').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.querySelectorAll('a[href="#faq"]').forEach(a=>{
+  a.addEventListener('click', e=>{
+    e.preventDefault();
+    const mob = document.getElementById('mobMenu');
+    const ham = document.getElementById('ham');
+    if (mob) mob.classList.remove('open');
+    if (ham) ham.classList.remove('open');
+    openFaq();
+  });
+});
+document.getElementById('faqBg').addEventListener('click', e=>{ if (e.target.id === 'faqBg') closeFaq(); });
+document.addEventListener('keydown', e=>{ if (e.key === 'Escape') closeFaq(); });
+
 
 // Lazy grid render — el elemento observado ES el grid (su id ya es "g-xxx")
 const SO=new IntersectionObserver(es=>{es.forEach(e=>{
@@ -1946,8 +1972,8 @@ function openLightboxReview(src){
   }
 
   // ───────── Botones: brillo que recorre lentamente + ripple al tocar ─────────
+  // Botones con efecto ripple al tocar (sin brillo, como pidió José)
   const shineTargets = 'a.btn, .pc-btn, .modal-wa, .btn-r, .btn-out, .btn-wa';
-  document.querySelectorAll(shineTargets).forEach(btn => btn.classList.add('gsap-shine'));
   document.body.addEventListener('click', (e) => {
     const btn = e.target.closest(shineTargets + ', .mimg-zoom, .modal-copy-link');
     if (!btn) return;
