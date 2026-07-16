@@ -990,7 +990,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{
       </a>
       <button class="modal-copy-link" id="mCopyLinkBtn" onclick="copyProductLink()">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-        <span id="mCopyLinkTxt">Copiar link de este producto</span>
+        <span id="mCopyLinkTxt">Compartir este producto</span>
       </button>
       <div class="modal-nav">
         <button class="m-prev" id="mPrev">← Anterior</button>
@@ -1347,23 +1347,34 @@ function openProductBySlug(slug){
 }
 function copyProductLink(){
   const url = location.origin + '/p/' + encodeURIComponent(currentProductSlug);
+  const nameEl = document.getElementById('mNameFull');
+  const title = (nameEl && nameEl.textContent ? nameEl.textContent + ' — ' : '') + 'Bogotá Bling';
   const btn = document.getElementById('mCopyLinkBtn');
   const txt = document.getElementById('mCopyLinkTxt');
   const original = txt ? txt.textContent : '';
-  const finish = (ok)=>{
+  const finish = (ok, msg)=>{
     if (!txt || !btn) return;
-    txt.textContent = ok ? '¡Link copiado!' : 'No se pudo copiar';
+    txt.textContent = msg || (ok ? '¡Link copiado!' : 'No se pudo copiar');
     btn.classList.toggle('copied', ok);
     setTimeout(()=>{ txt.textContent = original; btn.classList.remove('copied'); }, 1800);
   };
-  if (navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(url).then(()=>finish(true)).catch(()=>finish(false));
+  const copyFallback = ()=>{
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(url).then(()=>finish(true)).catch(()=>finish(false));
+    } else {
+      try{
+        const ta=document.createElement('textarea'); ta.value=url; ta.style.position='fixed'; ta.style.opacity='0';
+        document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+        finish(true);
+      }catch(e){ finish(false); }
+    }
+  };
+  // En celular (y navegadores de escritorio que lo soporten) abre el menú
+  // nativo para compartir a WhatsApp, Instagram, Facebook, correo, etc.
+  if (navigator.share){
+    navigator.share({ title, url }).catch(()=>{}); // si el usuario cancela, no hacemos nada
   } else {
-    try{
-      const ta=document.createElement('textarea'); ta.value=url; ta.style.position='fixed'; ta.style.opacity='0';
-      document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
-      finish(true);
-    }catch(e){ finish(false); }
+    copyFallback();
   }
 }
 
