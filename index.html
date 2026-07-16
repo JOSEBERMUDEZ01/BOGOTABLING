@@ -1163,6 +1163,18 @@ async function loadCatalog(){
     return { root, groups };
   }).filter(rg=>rg.groups.length>0);
 
+  // Red de seguridad: si un producto quedó sin categoría válida (por ejemplo,
+  // porque se borró la categoría a la que pertenecía), que NO desaparezca del
+  // catálogo — se agrupa aparte en "Otros productos" en vez de perderse.
+  const includedSlugs = new Set();
+  rootGroups.forEach(rg => rg.groups.forEach(g => includedSlugs.add(g.slug)));
+  const orphanProducts = P.filter(p => !includedSlugs.has(p.c));
+  if (orphanProducts.length){
+    BC['otros-productos'] = orphanProducts;
+    const otrosRoot = { id: 'otros-productos', slug: 'otros-productos', name: 'Otros productos', icon: '📦' };
+    rootGroups.push({ root: otrosRoot, groups: [otrosRoot] });
+  }
+
   const statProductEl = document.getElementById('statProductCount');
   const statCategoryEl = document.getElementById('statCategoryCount');
   if (statProductEl) animateCounter(statProductEl, P.length, P.length > 0 ? '+' : '');
