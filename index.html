@@ -630,9 +630,8 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{
     const SUPABASE_ANON_KEY = "sb_publishable_5rytTB3bbrAgwW4rHisMzQ_Zaubtuow";
     window.sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   </script>
-  <!-- GSAP (animaciones premium: hero, scroll reveal, botones, menú, contadores) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <!-- GSAP se carga más abajo, justo antes del código que lo usa, para no bloquear el pintado inicial de la página -->
+
 </head>
 <body>
 
@@ -1001,6 +1000,10 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{
   </div>
 </div>
 </div>
+
+<!-- GSAP se carga aquí (después de todo el HTML visible) para que la página pinte primero -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 
 <script>
 const WA='573177810009',WA_ENC='Hola%2C%20vi%20este%20producto%20en%20Bogot%C3%A1%20Bling%20y%20me%20gustar%C3%ADa%20recibir%20m%C3%A1s%20informaci%C3%B3n.';
@@ -1380,7 +1383,6 @@ function setupRotation(images){
   const wrap = document.getElementById('mImgWrap');
   const hasMulti = rotFrames.length > 1;
   wrap.classList.toggle('has-multi', hasMulti);
-  wrap.classList.toggle('spin3d', !hasMulti && !prefersReducedMotion);
   document.getElementById('mImgHint').textContent = hasMulti
     ? '↔ Arrastra para girar · doble toque para zoom'
     : 'Doble toque o pellizca para hacer zoom';
@@ -1408,7 +1410,7 @@ function rotGoTo(i){
 // ───────── ZOOM DE IMAGEN EN EL MODAL (doble toque, pellizco, rueda) ─────────
 // No reemplaza el giro por arrastre: cuando la foto está en zoom, arrastrar
 // hace panorámica; cuando no, arrastrar sigue rotando entre fotos como antes.
-let zoomScale = 1, zoomX = 0, zoomY = 0, zoomWasTilt = false;
+let zoomScale = 1, zoomX = 0, zoomY = 0;
 let panDragging = false, panStartX = 0, panStartY = 0, panOrigX = 0, panOrigY = 0;
 const pinchPointers = new Map();
 let pinchStartDist = 0, pinchStartScale = 1;
@@ -1419,7 +1421,6 @@ function resetZoom(){
   const wrap = document.getElementById('mImgWrap');
   if (window.gsap) gsap.set(img, { x:0, y:0, scale:1 }); else img.style.transform = '';
   wrap.classList.remove('zoomed');
-  if (zoomWasTilt) wrap.classList.add('spin3d');
 }
 function applyZoom(){
   const img = document.getElementById('mImg');
@@ -1438,8 +1439,6 @@ function applyZoom(){
 function toggleZoomAt(clientX, clientY){
   const wrap = document.getElementById('mImgWrap');
   if (zoomScale > 1.02){ resetZoom(); return; }
-  zoomWasTilt = wrap.classList.contains('spin3d');
-  wrap.classList.remove('spin3d');
   const rect = wrap.getBoundingClientRect();
   zoomScale = 2.3;
   zoomX = -((clientX - rect.left) - rect.width / 2) * (zoomScale - 1);
@@ -1484,7 +1483,6 @@ function toggleZoomAt(clientX, clientY){
       const pts = [...pinchPointers.values()];
       const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1;
       zoomScale = pinchStartScale * (dist / pinchStartDist);
-      if (zoomScale > 1.02) { zoomWasTilt = zoomWasTilt || wrap.classList.contains('spin3d'); wrap.classList.remove('spin3d'); }
       applyZoom();
       return;
     }
@@ -1516,8 +1514,6 @@ function toggleZoomAt(clientX, clientY){
     const wasZoomed = zoomScale > 1.02;
     zoomScale += (e.deltaY < 0 ? 1 : -1) * 0.25;
     if (!wasZoomed && zoomScale > 1.02){
-      zoomWasTilt = wrap.classList.contains('spin3d');
-      wrap.classList.remove('spin3d');
       zoomX = -((e.clientX - rect.left) - rect.width / 2) * (Math.max(zoomScale,1) - 1);
       zoomY = -((e.clientY - rect.top) - rect.height / 2) * (Math.max(zoomScale,1) - 1);
     }
