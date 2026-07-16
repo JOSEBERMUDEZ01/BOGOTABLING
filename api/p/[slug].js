@@ -28,7 +28,7 @@ export default async function handler(req, res) {
   let product = null;
   try {
     const r = await fetch(
-      `${SUPABASE_URL}/rest/v1/products?slug=eq.${encodeURIComponent(slug || '')}&select=name,description,price_current,stock,product_images(image_url)&limit=1`,
+      `${SUPABASE_URL}/rest/v1/products?slug=eq.${encodeURIComponent(slug || '')}&select=name,price_current,product_images(image_url)&limit=1`,
       { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }
     );
     const data = await r.json();
