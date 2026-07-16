@@ -276,14 +276,6 @@ body.has-promo .hero{padding-top:126px}
 @keyframes pcSpin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.pc-spin{display:none}}
 
-/* ── PANTALLA DE CARGA ── */
-#loadScreen{position:fixed;inset:0;z-index:9999;background:#0a0a0b;display:flex;align-items:center;justify-content:center}
-.load-inner{display:flex;flex-direction:column;align-items:center;gap:22px}
-#loadLogo{width:60px;height:60px;object-fit:contain;opacity:0;transform:scale(.85)}
-.load-bar{width:150px;height:2px;background:rgba(255,255,255,.15);border-radius:2px;overflow:hidden}
-.load-bar-fill{width:0%;height:100%;background:var(--r);border-radius:2px}
-@media(prefers-reduced-motion:reduce){#loadScreen{transition:none!important}#loadLogo{opacity:1;transform:none}}
-
 /* ── Botones premium: ripple al tocar (sin brillo) ── */
 .btn-ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,.55);pointer-events:none;z-index:5}
 
@@ -644,14 +636,6 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{
 </head>
 <body>
 
-<!-- PANTALLA DE CARGA -->
-<div id="loadScreen" aria-hidden="true">
-  <div class="load-inner">
-    <img id="loadLogo" alt="Bogotá Bling"/>
-    <div class="load-bar"><div class="load-bar-fill" id="loadBarFill"></div></div>
-  </div>
-</div>
-
 <!-- NAV -->
 <div class="promo-bar" id="promoBar"></div>
 <nav class="nav">
@@ -925,14 +909,8 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{
       </div>
       <div>
         <h4>Catálogo</h4>
-        <div class="f-links">
+        <div class="f-links" id="footerCatalogLinks">
           <a href="#destacados">Destacados</a>
-          <a href="#relojes-hombre">Relojes Hombre</a>
-          <a href="#relojes-dama">Relojes Dama</a>
-          
-          
-          
-          
           <a href="#novedades">Novedades</a>
         </div>
       </div>
@@ -1202,6 +1180,22 @@ async function loadCatalog(){
     });
     navList.insertBefore(btn, novedadesBtn);
   });
+
+  // Actualizar el listado "Catálogo" del footer con las categorías reales
+  // (se reconstruye cada vez que carga el catálogo, así siempre refleja lo que
+  // hay dado de alta en Supabase, sin tocar el HTML a mano)
+  const footerLinks = document.getElementById('footerCatalogLinks');
+  if (footerLinks){
+    const footerNovedades = footerLinks.querySelector('a[href="#novedades"]');
+    footerLinks.querySelectorAll('a[data-cat-link]').forEach(a=>a.remove());
+    rootGroups.forEach(rg=>{
+      const a=document.createElement('a');
+      a.href = '#'+rg.root.slug;
+      a.dataset.catLink = '1';
+      a.textContent = rg.root.name;
+      footerLinks.insertBefore(a, footerNovedades);
+    });
+  }
 
   // Construir grupos de renderizado (un grid por subcategoría u raíz-sin-hijos)
   GR={
@@ -1963,44 +1957,6 @@ function openLightboxReview(src){
       onComplete: () => { el.textContent = target.toLocaleString('es-CO') + suffix; }
     });
   };
-
-  // ───────── Pantalla de carga ─────────
-  (function loadingScreen(){
-    const screen = document.getElementById('loadScreen');
-    if (!screen) return;
-    const logo = document.getElementById('loadLogo');
-    const fill = document.getElementById('loadBarFill');
-    const navLogo = document.querySelector('.nav-logo img');
-    if (navLogo && logo) logo.src = navLogo.src;
-
-    let done = false;
-    const finish = () => {
-      if (done) return; done = true;
-      if (window.gsap && !reduceMotion){
-        gsap.to(fill, { width:'100%', duration:.22, ease:'power1.out', onComplete:()=>{
-          gsap.to(screen, { opacity:0, duration:.45, ease:'power2.out', onComplete:()=>{
-            screen.style.display = 'none';
-          }});
-        }});
-      } else {
-        screen.style.transition = 'opacity .3s ease';
-        screen.style.opacity = '0';
-        setTimeout(()=>{ screen.style.display = 'none'; }, 300);
-      }
-    };
-
-    if (window.gsap && !reduceMotion && logo && fill){
-      gsap.to(logo, { opacity:1, scale:1, duration:.5, ease:'power2.out' });
-      gsap.to(fill, { width:'82%', duration:1.2, ease:'power1.inOut' });
-    } else if (fill){
-      fill.style.width = '90%';
-      if (logo) logo.style.opacity = '1';
-    }
-
-    if (document.readyState === 'complete') setTimeout(finish, 320);
-    else window.addEventListener('load', () => setTimeout(finish, 220));
-    setTimeout(finish, 2200); // nunca bloquear más de ~2.2s
-  })();
 
   // ───────── Hero: entrada escalonada ─────────
   if (window.gsap && !reduceMotion){
