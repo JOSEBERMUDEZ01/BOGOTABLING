@@ -300,6 +300,39 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
     </div>
     <button class="btn btn-primary btn-full" id="loginBtn" onclick="handleLogin()">Iniciar sesión</button>
     <p class="error-msg" id="loginError">Correo o contraseña incorrectos.</p>
+    <p style="text-align:center;margin-top:14px">
+      <a href="#" style="font-size:.8rem;color:var(--tx2)" onclick="event.preventDefault();toggleRecoverBox(true)">¿Olvidaste tu contraseña?</a>
+    </p>
+  </div>
+
+  <div class="login-box" id="recoverBox" style="display:none">
+    <h1 style="font-size:1.1rem">Recuperar contraseña</h1>
+    <p>Te enviamos un link a tu correo para poner una contraseña nueva.</p>
+    <div class="field">
+      <label>Correo de tu cuenta</label>
+      <input type="email" id="recoverEmail" placeholder="admin@bogotabling.com"/>
+    </div>
+    <button class="btn btn-primary btn-full" id="recoverBtn" onclick="sendPasswordRecovery()">Enviar link de recuperación</button>
+    <p class="error-msg" id="recoverError"></p>
+    <p id="recoverOk" style="display:none;text-align:center;font-size:.82rem;color:#16a34a;margin-top:8px">Listo, revisa tu correo (y la carpeta de spam) y sigue el link para poner una contraseña nueva.</p>
+    <p style="text-align:center;margin-top:14px">
+      <a href="#" style="font-size:.8rem;color:var(--tx2)" onclick="event.preventDefault();toggleRecoverBox(false)">← Volver a iniciar sesión</a>
+    </p>
+  </div>
+
+  <div class="login-box" id="resetPassBox" style="display:none">
+    <h1 style="font-size:1.1rem">Nueva contraseña</h1>
+    <p>Ese link ya te confirmó quién eres. Escribe tu nueva contraseña.</p>
+    <div class="field">
+      <label>Nueva contraseña</label>
+      <input type="password" id="resetPassNew" placeholder="Mínimo 6 caracteres" autocomplete="new-password"/>
+    </div>
+    <div class="field">
+      <label>Repite la nueva contraseña</label>
+      <input type="password" id="resetPassNew2" placeholder="Confirmar" autocomplete="new-password"/>
+    </div>
+    <button class="btn btn-primary btn-full" id="resetPassBtn" onclick="confirmPasswordReset()">Guardar nueva contraseña</button>
+    <p class="error-msg" id="resetPassError"></p>
   </div>
 </div>
 
@@ -337,6 +370,7 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
         </div>
         <div class="am-section am-footer">
           <a href="/" target="_blank" class="am-link">↗ Ver sitio</a>
+          <button class="am-link" onclick="openAccountModal();toggleAdminMenu(false)">🔐 Mi cuenta</button>
           <button class="am-link am-danger" onclick="handleLogout()">⏻ Cerrar sesión</button>
         </div>
       </div>
@@ -480,6 +514,33 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
     <div class="modal-actions">
       <button class="btn btn-primary" onclick="applyBulkEdit()">Aplicar cambios</button>
       <button class="btn btn-outline" onclick="closeModal('bulkEditModalBg')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="accountModalBg">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('accountModalBg')">✕</button>
+    <h3>Mi cuenta</h3>
+    <p class="modal-sub">Cambia el correo o la contraseña con los que entras al panel. Deja en blanco lo que no quieras cambiar.</p>
+
+    <div class="field" style="background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:12px 14px;margin-bottom:14px">
+      <label style="margin:0 0 4px">Correo actual</label>
+      <p id="accountCurrentEmail" style="margin:0;font-size:.85rem;color:var(--tx2);font-weight:600">—</p>
+    </div>
+
+    <div class="field"><label>Nuevo correo (opcional)</label><input id="accountNewEmail" type="email" placeholder="Dejar igual"/></div>
+    <div class="field-row">
+      <div class="field"><label>Nueva contraseña (opcional)</label><input id="accountNewPassword" type="password" placeholder="Mínimo 6 caracteres" autocomplete="new-password"/></div>
+      <div class="field"><label>Repite la nueva contraseña</label><input id="accountNewPassword2" type="password" placeholder="Confirmar" autocomplete="new-password"/></div>
+    </div>
+    <div class="field"><label>Tu contraseña actual (para confirmar)</label><input id="accountOldPassword" type="password" placeholder="Requerida para guardar cualquier cambio" autocomplete="current-password"/></div>
+
+    <p id="accountMsg" style="display:none;font-size:.82rem;font-weight:600;border-radius:9px;padding:10px 12px;margin:4px 0 0"></p>
+
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="accountSaveBtn" onclick="saveAccountSettings()">Guardar cambios</button>
+      <button class="btn btn-outline" onclick="closeModal('accountModalBg')">Cancelar</button>
     </div>
   </div>
 </div>
@@ -633,6 +694,74 @@ async function handleLogin(){
 async function handleLogout(){
   await sb.auth.signOut();
   location.reload();
+}
+
+function toggleRecoverBox(show){
+  document.querySelector('#loginScreen > .login-box').style.display = show ? 'none' : 'block';
+  document.getElementById('recoverBox').style.display = show ? 'block' : 'none';
+  document.getElementById('recoverError').style.display = 'none';
+  document.getElementById('recoverOk').style.display = 'none';
+  document.getElementById('recoverEmail').value = '';
+}
+
+async function sendPasswordRecovery(){
+  const email = document.getElementById('recoverEmail').value.trim();
+  const btn = document.getElementById('recoverBtn');
+  const err = document.getElementById('recoverError');
+  err.style.display = 'none';
+  document.getElementById('recoverOk').style.display = 'none';
+  if (!email) { err.textContent = 'Escribe tu correo.'; err.style.display = 'block'; return; }
+
+  btn.disabled = true; btn.textContent = 'Enviando…';
+  const { error } = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: location.origin + location.pathname,
+  });
+  btn.disabled = false; btn.textContent = 'Enviar link de recuperación';
+
+  // Por seguridad no confirmamos si el correo existe o no en el sistema —
+  // siempre mostramos el mismo mensaje de éxito.
+  if (error && error.status && error.status >= 500) {
+    err.textContent = 'Hubo un problema enviando el correo. Intenta de nuevo en un momento.';
+    err.style.display = 'block';
+    return;
+  }
+  document.getElementById('recoverOk').style.display = 'block';
+}
+
+// Supabase detecta solo el link de recuperación en la URL y dispara este evento
+sb.auth.onAuthStateChange((event) => {
+  if (event === 'PASSWORD_RECOVERY') {
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+    document.querySelector('#loginScreen > .login-box').style.display = 'none';
+    document.getElementById('recoverBox').style.display = 'none';
+    document.getElementById('resetPassBox').style.display = 'block';
+  }
+});
+
+async function confirmPasswordReset(){
+  const p1 = document.getElementById('resetPassNew').value;
+  const p2 = document.getElementById('resetPassNew2').value;
+  const err = document.getElementById('resetPassError');
+  err.style.display = 'none';
+
+  if (p1.length < 6) { err.textContent = 'La contraseña debe tener mínimo 6 caracteres.'; err.style.display = 'block'; return; }
+  if (p1 !== p2) { err.textContent = 'Las dos contraseñas no coinciden.'; err.style.display = 'block'; return; }
+
+  const btn = document.getElementById('resetPassBtn');
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  const { error } = await sb.auth.updateUser({ password: p1 });
+  btn.disabled = false; btn.textContent = 'Guardar nueva contraseña';
+
+  if (error) { err.textContent = 'No se pudo guardar: ' + error.message; err.style.display = 'block'; return; }
+
+  const { data: userData } = await sb.auth.getUser();
+  const email = userData && userData.user ? userData.user.email : '';
+  notifyAccountChange(email, 'recovery');
+
+  alert('Contraseña actualizada. Ya puedes iniciar sesión con ella.');
+  await sb.auth.signOut();
+  location.href = location.origin + location.pathname;
 }
 
 async function checkSession(){
@@ -1692,6 +1821,100 @@ async function processBulkItems(items){
 }
 // ───────────── PROMOCIÓN DEL SITIO (franja) ─────────────
 let currentPromoId = null;
+
+// ───────────── MI CUENTA (correo / contraseña) ─────────────
+async function notifyAccountChange(email, changeType){
+  try {
+    await fetch('/api/notify-account-change', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to: email, changeType }),
+    });
+  } catch (e) { /* si el aviso falla, no afecta el cambio ya guardado */ }
+}
+
+function accountMsg(text, ok){
+  const el = document.getElementById('accountMsg');
+  el.textContent = text;
+  el.style.display = 'block';
+  el.style.background = ok ? 'rgba(34,197,94,.12)' : 'rgba(239,68,68,.12)';
+  el.style.color = ok ? '#16a34a' : '#dc2626';
+}
+
+async function openAccountModal(){
+  document.getElementById('accountMsg').style.display = 'none';
+  document.getElementById('accountNewEmail').value = '';
+  document.getElementById('accountNewPassword').value = '';
+  document.getElementById('accountNewPassword2').value = '';
+  document.getElementById('accountOldPassword').value = '';
+  const { data } = await sb.auth.getUser();
+  document.getElementById('accountCurrentEmail').textContent = (data && data.user && data.user.email) || '—';
+  openModal('accountModalBg');
+}
+
+async function saveAccountSettings(){
+  const newEmail = document.getElementById('accountNewEmail').value.trim();
+  const newPass = document.getElementById('accountNewPassword').value;
+  const newPass2 = document.getElementById('accountNewPassword2').value;
+  const oldPass = document.getElementById('accountOldPassword').value;
+
+  if (!newEmail && !newPass) {
+    accountMsg('Escribe un correo nuevo, una contraseña nueva, o ambos.', false);
+    return;
+  }
+  if (newPass && newPass.length < 6) {
+    accountMsg('La contraseña nueva debe tener mínimo 6 caracteres.', false);
+    return;
+  }
+  if (newPass !== newPass2) {
+    accountMsg('Las dos contraseñas no coinciden.', false);
+    return;
+  }
+  if (!oldPass) {
+    accountMsg('Escribe tu contraseña actual para confirmar el cambio.', false);
+    return;
+  }
+
+  const btn = document.getElementById('accountSaveBtn');
+  btn.disabled = true; btn.textContent = 'Verificando…';
+
+  // Confirmamos que quien está haciendo el cambio de verdad sabe la
+  // contraseña actual, antes de tocar nada.
+  const { data: userData } = await sb.auth.getUser();
+  const currentEmail = userData && userData.user ? userData.user.email : '';
+  const { error: reauthError } = await sb.auth.signInWithPassword({ email: currentEmail, password: oldPass });
+  if (reauthError) {
+    btn.disabled = false; btn.textContent = 'Guardar cambios';
+    accountMsg('Tu contraseña actual no es correcta.', false);
+    return;
+  }
+
+  btn.textContent = 'Guardando…';
+  const payload = {};
+  if (newEmail) payload.email = newEmail;
+  if (newPass) payload.password = newPass;
+
+  const { error } = await sb.auth.updateUser(payload);
+
+  btn.disabled = false; btn.textContent = 'Guardar cambios';
+
+  if (error) {
+    accountMsg('No se pudo guardar: ' + error.message, false);
+    return;
+  }
+
+  if (newEmail && newPass) {
+    accountMsg('Contraseña actualizada al instante. Para el correo, revisa la bandeja de "' + newEmail + '" y confirma el cambio desde ahí.', true);
+  } else if (newEmail) {
+    accountMsg('Te enviamos un correo de confirmación a "' + newEmail + '". El cambio se completa cuando lo confirmes desde ahí.', true);
+  } else {
+    accountMsg('Contraseña actualizada al instante.', true);
+  }
+  notifyAccountChange(currentEmail, newEmail && newPass ? 'both' : (newEmail ? 'email' : 'password'));
+  document.getElementById('accountNewPassword').value = '';
+  document.getElementById('accountNewPassword2').value = '';
+  document.getElementById('accountOldPassword').value = '';
+}
 
 async function openPromoBarModal(){
   const { data } = await sb.from('promotions').select('*').order('created_at', { ascending: false }).limit(1);
