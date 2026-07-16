@@ -172,7 +172,7 @@ img{display:block;max-width:100%}
 .mob-menu a:last-child{border:none;color:#25D366}
 
 /* ── HERO ── */
-.hero{min-height:100vh;padding:88px 0 60px;display:flex;align-items:center;background:linear-gradient(150deg,#fff 0%,#fff5f5 55%,#fff 100%);position:relative;overflow:hidden}
+.hero{min-height:100vh;min-height:100dvh;padding:88px 0 60px;display:flex;align-items:center;background:linear-gradient(150deg,#fff 0%,#fff5f5 55%,#fff 100%);position:relative;overflow:hidden}
 .hero::before{content:'';position:absolute;top:-150px;right:-150px;width:550px;height:550px;border-radius:50%;background:radial-gradient(circle,rgba(200,16,46,.07),transparent 65%);pointer-events:none}
 .hero::after{content:'';position:absolute;bottom:-80px;left:-80px;width:380px;height:380px;border-radius:50%;background:radial-gradient(circle,rgba(201,168,76,.06),transparent 65%);pointer-events:none}
 .hero-grid{display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;z-index:1;gap:32px}
@@ -183,7 +183,7 @@ img{display:block;max-width:100%}
 .hero-sub{font-size:.9rem;color:var(--k3);line-height:1.8;max-width:480px;margin:0 auto 28px}
 .hero-btns{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:32px;justify-content:center}
 .hero-btns .btn{font-size:.9rem;padding:13px 26px}
-.stats{display:flex;gap:20px;align-items:center;justify-content:center}
+.stats{display:flex;gap:20px;align-items:center;justify-content:center;flex-wrap:wrap;row-gap:10px}
 .stat-n{display:block;font-size:1.9rem;font-weight:900;color:var(--r);line-height:1}
 .stat-l{font-size:.62rem;color:var(--k3);letter-spacing:.1em;text-transform:uppercase;margin-top:1px}
 .stat-sep{width:1px;height:34px;background:var(--s3)}
@@ -379,6 +379,11 @@ body.has-promo #mobMenuBackdrop{top:106px}
 .faq-item[open] summary::after{transform:translateY(-50%) rotate(45deg)}
 .faq-item p{font-size:.86rem;color:var(--k3);line-height:1.7;padding:0 0 20px}
 
+/* ── Aviso flotante (toast) ── */
+.bb-toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--k);color:#fff;padding:13px 22px;border-radius:12px;font-size:.85rem;font-weight:600;box-shadow:0 14px 40px rgba(0,0,0,.3);z-index:3000;opacity:0;pointer-events:none;transition:opacity .3s ease,transform .3s ease;max-width:90vw;text-align:center}
+.bb-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(prefers-reduced-motion:reduce){.bb-toast{transition:opacity .2s ease}}
+
 /* ── Revelado de títulos palabra por palabra ── */
 .sec-h2 .split-word,.sec-h3 .split-word{display:inline-block;overflow:hidden;vertical-align:top}
 .sec-h2 .split-word-inner,.sec-h3 .split-word-inner{display:inline-block;will-change:transform}
@@ -441,7 +446,7 @@ body.has-promo #mobMenuBackdrop{top:106px}
 .modal-card{display:flex;flex-direction:column;width:100%;height:100%;min-height:0}
 @keyframes mIn{from{transform:scale(.95);opacity:0}to{transform:none;opacity:1}}
 /* Top bar */
-.modal-topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(0,0,0,.6);backdrop-filter:blur(12px);flex-shrink:0;z-index:10;gap:12px}
+.modal-topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(0,0,0,.6);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);flex-shrink:0;z-index:10;gap:12px}
 .modal-topbar-info{flex:1;min-width:0}
 .modal-cat{font-size:.6rem;font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:rgba(200,16,46,.9);margin-bottom:2px}
 .modal-name{font-size:.95rem;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -500,11 +505,15 @@ body.has-promo #mobMenuBackdrop{top:106px}
   .modal-name{font-size:.88rem}
   .modal-body{padding:16px 16px 10px}
   .modal-name-full{font-size:1rem}
+  /* iOS/Safari hace zoom automático al enfocar un input con letra menor a
+     16px — igualamos todos los campos a 16px solo en móvil para evitarlo */
+  .review-form input[type="text"],.review-form textarea,
+  .pc-search,.pc-filter,input[type="search"],select.filter{font-size:16px}
 }
 
 /* Escritorio: tarjeta centrada de dos columnas (foto | info), en vez de pantalla completa */
 @media(min-width:900px){
-  .modal-bg{align-items:center;justify-content:center;padding:36px;background:rgba(6,6,7,.86);backdrop-filter:blur(6px)}
+  .modal-bg{align-items:center;justify-content:center;padding:36px;background:rgba(6,6,7,.86);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
   .modal-card{
     width:100%;max-width:1080px;height:auto;max-height:86vh;
     background:#111;border-radius:20px;overflow:hidden;
@@ -715,6 +724,8 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{
           <div><span class="stat-n" id="statCategoryCount">—</span><span class="stat-l">Categorías</span></div>
           <div class="stat-sep"></div>
           <div><span class="stat-n">24h</span><span class="stat-l">Envío</span></div>
+          <div class="stat-sep" id="statRatingSep" style="display:none"></div>
+          <div id="statRatingWrap" style="display:none"><span class="stat-n" id="statRatingNum">—</span><span class="stat-l">Calificación</span></div>
         </div>
       </div>
       <div class="logo-wrap" style="order:-1">
@@ -1341,9 +1352,24 @@ function CM(){
 // ───────── LINK DIRECTO POR PRODUCTO (compartir #producto/slug) ─────────
 function openProductBySlug(slug){
   const idx = P.findIndex(p=>p.s===slug);
-  if (idx === -1) return;
+  if (idx === -1) { showToast('Ese producto ya no está disponible. Mira el resto del catálogo 👇'); return; }
   CL2 = P; CI = idx;
   SM(P[idx]);
+}
+
+// Aviso flotante breve (para "producto no encontrado" y futuros mensajes)
+function showToast(msg, ms){
+  let el = document.getElementById('bbToast');
+  if (!el){
+    el = document.createElement('div');
+    el.id = 'bbToast';
+    el.className = 'bb-toast';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(()=>el.classList.remove('show'), ms || 4200);
 }
 function copyProductLink(){
   const url = location.origin + '/p/' + encodeURIComponent(currentProductSlug);
@@ -1713,6 +1739,16 @@ function renderReviewsSummary(reviews){
       <div class="rs-stars">${'★'.repeat(fullStars)}${'☆'.repeat(5-fullStars)}</div>
       <div class="rs-count">${reviews.length} reseña${reviews.length===1?'':'s'}</div>
     </div>`;
+
+  // También lo mostramos arriba en el hero, sin que el usuario tenga que bajar
+  const heroNum = document.getElementById('statRatingNum');
+  const heroWrap = document.getElementById('statRatingWrap');
+  const heroSep = document.getElementById('statRatingSep');
+  if (heroNum && heroWrap){
+    heroNum.textContent = rounded + '★';
+    heroWrap.style.display = '';
+    if (heroSep) heroSep.style.display = '';
+  }
 }
 
 function escapeHtml(s){
