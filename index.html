@@ -1346,7 +1346,7 @@ function openProductBySlug(slug){
   SM(P[idx]);
 }
 function copyProductLink(){
-  const url = location.origin + location.pathname + '#producto/' + encodeURIComponent(currentProductSlug);
+  const url = location.origin + '/p/' + encodeURIComponent(currentProductSlug);
   const btn = document.getElementById('mCopyLinkBtn');
   const txt = document.getElementById('mCopyLinkTxt');
   const original = txt ? txt.textContent : '';
