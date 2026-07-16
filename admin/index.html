@@ -935,8 +935,19 @@ async function saveCategory(){
 async function deleteCategory(id){
   const hasChildren = categoriesCache.some(c=>c.parent_id===id);
   if (hasChildren){ alert('Esta categoría tiene subcategorías. Elimina o mueve las subcategorías primero.'); return; }
+
+  const { count, error: countErr } = await sb.from('products')
+    .select('id', { count: 'exact', head: true })
+    .eq('category_id', id);
+  if (countErr) { alert('No se pudo verificar si la categoría tiene productos: ' + countErr.message); return; }
+  if (count && count > 0) {
+    alert(`Esta categoría tiene ${count} producto${count===1?'':'s'} asignado${count===1?'':'s'}. Mueve o reasigna esos productos a otra categoría antes de eliminarla.`);
+    return;
+  }
+
   if (!confirm('¿Eliminar esta categoría?')) return;
-  await sb.from('categories').delete().eq('id', id);
+  const { error } = await sb.from('categories').delete().eq('id', id);
+  if (error) { alert('Error al eliminar la categoría: ' + error.message); return; }
   loadCategories();
 }
 
@@ -1339,8 +1350,7 @@ async function uploadPendingImages(productId){
   await Promise.all(pendingImages.map(async (file) => {
     let blob = file;
     try {
-      const dataUrl = await fileToDataUrl(file);
-      blob = await compressImage(dataUrl);
+      blob = await compressFile(file);
     } catch (e) {
       console.error('No se pudo comprimir, se sube el archivo original:', e);
     }
@@ -1701,6 +1711,34 @@ function compressImage(dataUrl, maxWidth = 1600, quality = 0.87){
   });
 }
 
+// Comprime un File directo, sin pasar por base64 cuando el navegador lo permite.
+// createImageBitmap() decodifica la imagen de forma nativa (mucho más rápido,
+// sobre todo en celulares con fotos grandes). Si no está disponible o falla,
+// cae al método viejo (FileReader → dataURL → new Image()).
+async function compressFile(file, maxWidth = 1600, quality = 0.87){
+  if ('createImageBitmap' in window) {
+    try {
+      const bitmap = await createImageBitmap(file);
+      let w = bitmap.width, h = bitmap.height;
+      if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(bitmap, 0, 0, w, h);
+      bitmap.close();
+      const blob = await new Promise((resolve, reject) => {
+        canvas.toBlob(b => b ? resolve(b) : reject(new Error('No se pudo comprimir la imagen')), 'image/jpeg', quality);
+      });
+      return blob;
+    } catch (e) {
+      console.warn('createImageBitmap falló, se usa el método de respaldo:', e);
+      // sigue abajo al método de respaldo
+    }
+  }
+  const dataUrl = await fileToDataUrl(file);
+  return compressImage(dataUrl, maxWidth, quality);
+}
+
 function bulkLog(msg, cls){
   const log = document.getElementById('bulkLog');
   log.classList.add('show');
@@ -1726,6 +1764,14 @@ async function runBulkImport(){
   await processBulkItems(items);
   bulkDrafts = [];
   renderBulkReview();
+}
+
+async function uploadBulkImage(prod, blob){
+  const path = `${prod.id}/${Date.now()}-import.jpg`;
+  const { error: upErr } = await sb.storage.from('product-images').upload(path, blob);
+  if (upErr) return null;
+  const { data: pub } = sb.storage.from('product-images').getPublicUrl(path);
+  return pub.publicUrl;
 }
 
 // Procesa una lista de productos {name, description, category_slug, price_current, price_previous,
@@ -1773,32 +1819,34 @@ async function processBulkItems(items){
       if (item.image) {
         let publicUrl = null;
 
-        // Normaliza el origen de la imagen a un dataURL base64 cuando aplica
-        let dataUrl = null;
         if (item.image instanceof File) {
-          dataUrl = await fileToDataUrl(item.image);
+          // Camino rápido: comprime el File directo con createImageBitmap, sin pasar por base64
+          const originalSize = item.image.size;
+          let blob = item.image;
+          if (compressEnabled) {
+            try {
+              blob = await compressFile(item.image);
+              bulkLog(`&nbsp;&nbsp;↳ imagen: ${(originalSize/1024).toFixed(0)}KB → ${(blob.size/1024).toFixed(0)}KB`);
+            } catch (e) {
+              blob = item.image;
+              bulkLog(`&nbsp;&nbsp;↳ no se pudo comprimir, se sube sin comprimir`, 'err');
+            }
+          }
+          publicUrl = await uploadBulkImage(prod, blob);
         } else if (typeof item.image === 'string' && item.image.startsWith('data:')) {
-          dataUrl = item.image;
-        }
-
-        if (dataUrl) {
-          const originalBlob = base64ToBlob(dataUrl);
+          // Viene de la extracción de PDF/OCR como dataURL base64
+          const originalBlob = base64ToBlob(item.image);
           let blob = originalBlob;
           if (compressEnabled) {
             try {
-              blob = await compressImage(dataUrl);
+              blob = await compressImage(item.image);
               bulkLog(`&nbsp;&nbsp;↳ imagen: ${(originalBlob.size/1024).toFixed(0)}KB → ${(blob.size/1024).toFixed(0)}KB`);
             } catch (e) {
               blob = originalBlob;
               bulkLog(`&nbsp;&nbsp;↳ no se pudo comprimir, se sube sin comprimir`, 'err');
             }
           }
-          const path = `${prod.id}/${Date.now()}-import.jpg`;
-          const { error: upErr } = await sb.storage.from('product-images').upload(path, blob);
-          if (!upErr) {
-            const { data: pub } = sb.storage.from('product-images').getPublicUrl(path);
-            publicUrl = pub.publicUrl;
-          }
+          publicUrl = await uploadBulkImage(prod, blob);
         } else if (typeof item.image === 'string') {
           publicUrl = item.image; // URL pública directa
         }
