@@ -1344,7 +1344,8 @@ function fileToDataUrl(file){
 }
 
 async function uploadPendingImages(productId){
-  // Comprime y sube todas las imágenes EN PARALELO (antes iban una por una, sin comprimir)
+  // Comprime y sube todas las imágenes EN PARALELO
+  let failed = 0;
   await Promise.all(pendingImages.map(async (file) => {
     let blob = file;
     try {
@@ -1354,10 +1355,12 @@ async function uploadPendingImages(productId){
     }
     const path = `${productId}/${Date.now()}-${Math.random().toString(36).slice(2,7)}.jpg`;
     const { error: upErr } = await sb.storage.from('product-images').upload(path, blob);
-    if (upErr) { console.error(upErr); return; }
+    if (upErr) { console.error(upErr); failed++; return; }
     const { data: pub } = sb.storage.from('product-images').getPublicUrl(path);
-    await sb.from('product_images').insert({ product_id: productId, image_url: pub.publicUrl });
+    const { error: insErr } = await sb.from('product_images').insert({ product_id: productId, image_url: pub.publicUrl });
+    if (insErr) { console.error(insErr); failed++; }
   }));
+  return failed;
 }
 
 async function saveProduct(){
@@ -1402,11 +1405,13 @@ async function saveProduct(){
     productId = data.id;
   }
 
-  if (pendingImages.length > 0) await uploadPendingImages(productId);
+  let imgFailCount = 0;
+  if (pendingImages.length > 0) imgFailCount = await uploadPendingImages(productId);
 
   btn.disabled = false;
   btn.textContent = 'Guardar';
   closeModal('productModalBg');
+  if (imgFailCount > 0) alert(`El producto se guardó, pero ${imgFailCount} imagen${imgFailCount===1?'':'es'} no se pudo${imgFailCount===1?'':'ieron'} subir. Volvé a editar el producto para intentar de nuevo.`);
   loadProducts();
 }
 
@@ -1466,24 +1471,24 @@ function handleBulkImageSelect(event){
   const fallbackCat = categoriesCache.find(c => c.id === fallbackCatId);
   const price = parsePriceInput(document.getElementById('bulkImgPrice').value);
 
+  // URL.createObjectURL es instantáneo (no lee ni codifica el archivo, solo crea una
+  // referencia), a diferencia de FileReader.readAsDataURL que copiaba cada foto completa
+  // a base64 solo para mostrar una miniatura chica. Con muchas fotos esto se nota mucho.
   files.forEach(file=>{
     const detected = detectCategoryFromText(file.name);
     const cat = detected || fallbackCat;
-    const reader = new FileReader();
-    reader.onload = e => {
-      bulkDrafts.push({
-        name: guessNameFromFilename(file.name) || 'Producto',
-        categoryId: cat ? cat.id : '',
-        detected: !!detected,
-        price: price || '',
-        stock: 3,
-        thumb: e.target.result,
-        image: file,
-      });
-      renderBulkReview();
-    };
-    reader.readAsDataURL(file);
+    bulkDrafts.push({
+      name: guessNameFromFilename(file.name) || 'Producto',
+      categoryId: cat ? cat.id : '',
+      detected: !!detected,
+      price: price || '',
+      stock: 3,
+      thumb: URL.createObjectURL(file),
+      thumbIsObjectUrl: true,
+      image: file,
+    });
   });
+  renderBulkReview();
   event.target.value = '';
 }
 
@@ -1517,7 +1522,7 @@ async function handleBulkPdfSelect(event){
         detected: !!detected,
         price: price || '',
         stock: 3,
-        thumb: page.image,
+        thumb: page.thumb,
         image: page.image,
       });
     });
@@ -1556,11 +1561,14 @@ function renderBulkReview(){
 }
 
 function removeBulkDraft(i){
+  const d = bulkDrafts[i];
+  if (d && d.thumbIsObjectUrl) URL.revokeObjectURL(d.thumb);
   bulkDrafts.splice(i, 1);
   renderBulkReview();
 }
 
 function clearBulkDrafts(){
+  bulkDrafts.forEach(d => { if (d.thumbIsObjectUrl) URL.revokeObjectURL(d.thumb); });
   bulkDrafts = [];
   renderBulkReview();
 }
@@ -1622,7 +1630,18 @@ async function pdfToPages(file){
     canvas.width = viewport.width;
     canvas.height = viewport.height;
     await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
-    const image = canvas.toDataURL('image/jpeg', 0.9);
+
+    // Imagen para subir: Blob directo del canvas (sin pasar por base64 — más rápido y liviano)
+    const image = await new Promise(resolve => canvas.toBlob(b => resolve(b), 'image/jpeg', 0.9));
+
+    // Miniatura liviana solo para la vista previa de la lista (no hace falta full-res para eso).
+    // Se dibuja a partir del canvas ya renderizado, así no se vuelve a procesar la página del PDF.
+    const thumbW = 320;
+    const thumbH = Math.round(canvas.height * (thumbW / canvas.width));
+    const thumbCanvas = document.createElement('canvas');
+    thumbCanvas.width = thumbW; thumbCanvas.height = thumbH;
+    thumbCanvas.getContext('2d').drawImage(canvas, 0, 0, thumbW, thumbH);
+    const thumb = thumbCanvas.toDataURL('image/jpeg', 0.6);
 
     let text = '';
     try {
@@ -1630,18 +1649,9 @@ async function pdfToPages(file){
       text = content.items.map(it => it.str).join(' ');
     } catch (e) { /* página sin texto extraíble, seguimos sin detectar */ }
 
-    pages.push({ image, text });
+    pages.push({ image, thumb, text });
   }
   return pages;
-}
-
-function base64ToBlob(dataUrl){
-  const [header, b64] = dataUrl.split(',');
-  const mime = header.match(/data:(.*?);base64/)[1];
-  const bin = atob(b64);
-  const arr = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
-  return new Blob([arr], { type: mime });
 }
 
 function compressImage(dataUrl, maxWidth = 1600, quality = 0.87){
@@ -1714,6 +1724,7 @@ async function runBulkImport(){
   });
 
   await processBulkItems(items);
+  bulkDrafts.forEach(d => { if (d.thumbIsObjectUrl) URL.revokeObjectURL(d.thumb); });
   bulkDrafts = [];
   renderBulkReview();
 }
@@ -1726,19 +1737,33 @@ async function uploadBulkImage(prod, blob){
   return pub.publicUrl;
 }
 
+// Ejecuta `worker` sobre `items` con un máximo de `limit` en simultáneo — más rápido que
+// uno por uno, pero sin mandar todo a la vez (evita saturar Supabase o la conexión del cliente).
+async function runWithConcurrency(items, limit, worker){
+  let idx = 0;
+  async function runner(){
+    while (idx < items.length){
+      const current = idx++;
+      await worker(items[current], current);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, runner));
+}
+
 // Procesa una lista de productos {name, description, category_slug, price_current, price_previous,
 // stock, is_featured, is_new, is_offer, is_limited_edition, image}. `image` puede ser un File,
-// un dataURL base64, una URL pública, o venir vacío.
+// un Blob (páginas de PDF ya renderizadas), una URL pública, o venir vacío.
 async function processBulkItems(items){
   const btn = document.getElementById('bulkRunBtn');
   btn.disabled = true;
-  btn.textContent = 'Importando…';
   document.getElementById('bulkLog').innerHTML = '';
 
   const compressEnabled = document.getElementById('bulkCompress').checked;
-  let ok = 0, fail = 0;
+  let ok = 0, fail = 0, done = 0;
+  const updateBtn = () => { btn.textContent = `Importando… (${done}/${items.length})`; };
+  updateBtn();
 
-  for (const item of items) {
+  await runWithConcurrency(items, 3, async (item) => {
     try {
       let categoryId = null;
       if (item.category_slug) {
@@ -1771,8 +1796,9 @@ async function processBulkItems(items){
       if (item.image) {
         let publicUrl = null;
 
-        if (item.image instanceof File) {
-          // Camino rápido: comprime el File directo con createImageBitmap, sin pasar por base64
+        if (item.image instanceof Blob) {
+          // Camino rápido: File (fotos sueltas) o Blob (páginas de PDF ya renderizadas),
+          // comprimido con createImageBitmap cuando se puede — sin pasar por base64.
           const originalSize = item.image.size;
           let blob = item.image;
           if (compressEnabled) {
@@ -1781,20 +1807,6 @@ async function processBulkItems(items){
               bulkLog(`&nbsp;&nbsp;↳ imagen: ${(originalSize/1024).toFixed(0)}KB → ${(blob.size/1024).toFixed(0)}KB`);
             } catch (e) {
               blob = item.image;
-              bulkLog(`&nbsp;&nbsp;↳ no se pudo comprimir, se sube sin comprimir`, 'err');
-            }
-          }
-          publicUrl = await uploadBulkImage(prod, blob);
-        } else if (typeof item.image === 'string' && item.image.startsWith('data:')) {
-          // Viene de la extracción de PDF/OCR como dataURL base64
-          const originalBlob = base64ToBlob(item.image);
-          let blob = originalBlob;
-          if (compressEnabled) {
-            try {
-              blob = await compressImage(item.image);
-              bulkLog(`&nbsp;&nbsp;↳ imagen: ${(originalBlob.size/1024).toFixed(0)}KB → ${(blob.size/1024).toFixed(0)}KB`);
-            } catch (e) {
-              blob = originalBlob;
               bulkLog(`&nbsp;&nbsp;↳ no se pudo comprimir, se sube sin comprimir`, 'err');
             }
           }
@@ -1811,8 +1823,11 @@ async function processBulkItems(items){
     } catch (e) {
       fail++;
       bulkLog(`✘ ${item.name || '(sin nombre)'}: ${e.message}`, 'err');
+    } finally {
+      done++;
+      updateBtn();
     }
-  }
+  });
 
   bulkLog(`— Listo: ${ok} importados, ${fail} con error —`);
   btn.disabled = false;
