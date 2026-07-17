@@ -7,7 +7,6 @@
 <title>Panel Admin — Bogotá Bling</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{background:#0a0a0b;color:#eee;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;font-size:14px;letter-spacing:-.005em}
@@ -624,7 +623,6 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
       <div class="toolbar" style="margin-bottom:10px">
         <div class="sub"><b id="bulkReviewCount">0</b> producto(s) listos para revisar — edita lo que haga falta antes de importar</div>
         <div style="display:flex;gap:8px">
-          <button class="btn btn-gold btn-xs" id="bulkAiBtn" onclick="detectAllWithAI()">🔍 Detectar categoría (gratis)</button>
           <button class="btn btn-outline btn-xs" onclick="clearBulkDrafts()">Vaciar lista</button>
         </div>
       </div>
@@ -1574,52 +1572,6 @@ function openLightbox(src){
 }
 function closeLightbox(){
   document.getElementById('lightboxBg').classList.remove('open');
-}
-
-// ───────────── DETECCIÓN CON IA (Claude, vía función serverless) ─────────────
-// Lee el texto que aparezca DENTRO de la foto (etiquetas, cajas, marcas) usando
-// OCR gratuito que corre en tu propio navegador (Tesseract.js) — sin API, sin costo,
-// sin tarjeta. Combina ese texto con el nombre del archivo para detectar la categoría.
-async function detectAllWithAI(){
-  if (!bulkDrafts.length) return;
-  if (!window.Tesseract) { alert('La librería de reconocimiento de texto no cargó. Verifica tu conexión y recarga la página.'); return; }
-
-  const btn = document.getElementById('bulkAiBtn');
-  btn.disabled = true;
-
-  for (let i = 0; i < bulkDrafts.length; i++) {
-    btn.textContent = `🔍 Leyendo foto ${i + 1}/${bulkDrafts.length}…`;
-    try {
-      const { data: { text } } = await Tesseract.recognize(bulkDrafts[i].thumb, 'spa+eng');
-      const cat = detectCategoryFromText(text);
-      if (cat) {
-        bulkDrafts[i].categoryId = cat.id;
-        bulkDrafts[i].detected = true;
-      }
-    } catch (e) {
-      console.error('OCR falló para item', i, e);
-    }
-    renderBulkReview();
-  }
-
-  btn.disabled = false;
-  btn.textContent = '🔍 Detectar categoría (gratis)';
-  bulkLog2(`Listo — revisa las categorías detectadas antes de importar. El texto leído en la foto no siempre alcanza para adivinar sola, así que corrige lo que haga falta.`);
-}
-
-function bulkLog2(msg){
-  const info = document.getElementById('bulkPdfInfo');
-  // Usamos un pequeño aviso reutilizando el estilo de ayuda, mostrado arriba de la lista
-  const el = document.getElementById('bulkReviewCount').closest('.toolbar');
-  let note = document.getElementById('bulkOcrNote');
-  if (!note) {
-    note = document.createElement('div');
-    note.id = 'bulkOcrNote';
-    note.className = 'bulk-help';
-    note.style.marginTop = '8px';
-    el.after(note);
-  }
-  note.textContent = msg;
 }
 
 // Sinónimos para reconocer la categoría en texto (nombre de archivo o página de PDF).
