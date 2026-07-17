@@ -474,7 +474,9 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
     </div>
     <div class="field">
       <label>Categoría padre (opcional — déjalo vacío si es principal)</label>
-      <select id="categoryParent"><option value="">— Categoría principal —</option></select>
+      <input id="categoryParentInput" type="text" list="categoryParentList" placeholder="Buscar una categoría o escribe el nombre de una nueva…" autocomplete="off" oninput="onCategoryParentInput()"/>
+      <datalist id="categoryParentList"></datalist>
+      <p class="bulk-help" id="categoryParentHint" style="margin-top:6px;display:none"></p>
     </div>
     <div class="modal-actions">
       <button class="btn btn-primary" onclick="saveCategory()">Guardar</button>
@@ -849,9 +851,8 @@ function renderCategorySelects(){
   const roots = all.filter(c => !c.parent_id);
   const childrenOf = pid => all.filter(c => c.parent_id === pid);
 
-  const parentSel = document.getElementById('categoryParent');
-  parentSel.innerHTML = '<option value="">— Categoría principal —</option>' +
-    roots.map(c=>`<option value="${c.id}">${c.icon || ''} ${c.name}</option>`).join('');
+  const parentList = document.getElementById('categoryParentList');
+  parentList.innerHTML = roots.map(c=>`<option value="${(c.name||'').replace(/"/g,'&quot;')}"></option>`).join('');
 
   const optionsHtml = buildCategoryOptionsHtml();
   document.getElementById('productCategory').innerHTML = optionsHtml;
@@ -877,12 +878,29 @@ function buildCategoryOptionsHtml(){
   return html;
 }
 
+function onCategoryParentInput(){
+  const val = document.getElementById('categoryParentInput').value.trim();
+  const hint = document.getElementById('categoryParentHint');
+  if (!val) { hint.style.display = 'none'; return; }
+  const match = categoriesCache.find(c => !c.parent_id && c.name.toLowerCase() === val.toLowerCase());
+  hint.style.display = 'block';
+  if (match) {
+    hint.textContent = '✔ Categoría existente';
+    hint.style.color = 'var(--k3)';
+  } else {
+    hint.textContent = `+ Se creará "${val}" como categoría nueva al guardar`;
+    hint.style.color = 'var(--gl)';
+  }
+}
+
 function openCategoryModal(preselectParentId){
   document.getElementById('categoryModalTitle').textContent = 'Nueva categoría';
   document.getElementById('categoryId').value = '';
   document.getElementById('categoryIcon').value = '';
   document.getElementById('categoryName').value = '';
-  document.getElementById('categoryParent').value = typeof preselectParentId === 'string' ? preselectParentId : '';
+  const preselectCat = typeof preselectParentId === 'string' ? categoriesCache.find(c=>c.id===preselectParentId) : null;
+  document.getElementById('categoryParentInput').value = preselectCat ? preselectCat.name : '';
+  document.getElementById('categoryParentHint').style.display = 'none';
   openModal('categoryModalBg');
 }
 
@@ -891,7 +909,9 @@ function editCategory(cat){
   document.getElementById('categoryId').value = cat.id;
   document.getElementById('categoryIcon').value = cat.icon || '';
   document.getElementById('categoryName').value = cat.name;
-  document.getElementById('categoryParent').value = cat.parent_id || '';
+  const parentCat = cat.parent_id ? categoriesCache.find(c=>c.id===cat.parent_id) : null;
+  document.getElementById('categoryParentInput').value = parentCat ? parentCat.name : '';
+  document.getElementById('categoryParentHint').style.display = 'none';
   openModal('categoryModalBg');
 }
 
@@ -916,7 +936,27 @@ async function saveCategory(){
   const name = document.getElementById('categoryName').value.trim();
   if (!name) return;
   const icon = document.getElementById('categoryIcon').value.trim();
-  const parentId = document.getElementById('categoryParent').value || null;
+  const parentInput = document.getElementById('categoryParentInput').value.trim();
+
+  let parentId = null;
+  if (parentInput) {
+    if (parentInput.toLowerCase() === name.toLowerCase()) {
+      alert('Una categoría no puede ser su propia categoría padre. Elegí otro nombre.');
+      return;
+    }
+    const existing = categoriesCache.find(c => !c.parent_id && c.name.toLowerCase() === parentInput.toLowerCase());
+    if (existing) {
+      parentId = existing.id;
+    } else {
+      // No existe todavía — se crea como categoría principal nueva antes de continuar
+      const parentSlug = slugify(parentInput) + '-' + Date.now().toString(36).slice(-4);
+      const { data: newParent, error: newParentErr } = await sb.from('categories')
+        .insert({ name: parentInput, slug: parentSlug, icon: '', parent_id: null }).select().single();
+      if (newParentErr) { alert('No se pudo crear la categoría padre: ' + newParentErr.message); return; }
+      parentId = newParent.id;
+      categoriesCache.push(newParent);
+    }
+  }
 
   if (id) {
     const { error } = await sb.from('categories').update({ name, icon, parent_id: parentId }).eq('id', id);
