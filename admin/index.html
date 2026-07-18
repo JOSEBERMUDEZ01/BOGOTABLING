@@ -581,7 +581,7 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
       <div class="field"><label>Zona</label><input id="szZone" type="text" placeholder="Ej: Medellín"/></div>
       <div class="field"><label>Tiempo estimado</label><input id="szEta" type="text" placeholder="Ej: 2-3 días hábiles"/></div>
     </div>
-    <div class="field"><label>Costo</label><input id="szCost" type="text" placeholder="Ej: $15.000, Gratis, o Consultar"/></div>
+    <div class="field"><label>Costo</label><input id="szCost" type="text" placeholder="Ej: $15.000, Gratis, o Consultar" oninput="formatCostInput(this)"/></div>
     <div class="modal-actions">
       <button class="btn btn-primary" id="shippingSaveBtn" onclick="saveShippingZone()">+ Agregar zona</button>
       <button class="btn btn-outline" onclick="resetShippingForm()">Cancelar edición</button>
@@ -2045,6 +2045,15 @@ async function openShippingModal(){
   openModal('shippingModalBg');
 }
 
+// Si lo que se escribe es solo un número (con o sin $ y puntos), se le pone el punto de
+// miles automáticamente. Si escribe letras (Gratis, Consultar, etc.) se deja tal cual.
+function formatCostInput(el){
+  const raw = el.value;
+  if (!/^[\d.$\s]*$/.test(raw)) return; // tiene letras u otros símbolos, no se toca
+  const digits = raw.replace(/\D/g, '');
+  el.value = digits ? '$' + Number(digits).toLocaleString('es-CO') : raw;
+}
+
 function resetShippingForm(){
   editingShippingZoneId = null;
   document.getElementById('szZone').value = '';
@@ -2064,7 +2073,7 @@ function editShippingZone(z){
 function renderShippingZones(){
   const wrap = document.getElementById('shippingZonesList');
   if (!shippingZonesCache.length){
-    wrap.innerHTML = '<p class="tree-empty-hint">Todavía no agregaste ninguna zona — el sitio muestra una tabla genérica hasta que agregues al menos una.</p>';
+    wrap.innerHTML = '<p class="tree-empty-hint">Todavía no agregaste ninguna zona.</p>';
     return;
   }
   wrap.innerHTML = shippingZonesCache.map(z=>`
