@@ -168,7 +168,7 @@ img{display:block;max-width:100%}
 .mob-menu{display:none;position:fixed;top:68px;left:0;right:0;background:#fff;z-index:999;border-bottom:2px solid var(--r);box-shadow:0 8px 32px rgba(0,0,0,.12)}
 .mob-menu.open{display:block}
 .mob-menu-inner{padding:12px 24px 20px}
-.mob-menu a{display:flex;align-items:center;gap:10px;padding:12px 0;font-size:.92rem;font-weight:600;color:var(--k);border-bottom:1px solid var(--s2)}
+.mob-menu a,.mob-menu>.mob-menu-inner>button{display:flex;align-items:center;gap:10px;padding:12px 0;font-size:.92rem;font-weight:600;color:var(--k);border-bottom:1px solid var(--s2);width:100%;background:none;border-left:none;border-right:none;border-top:none;font-family:inherit;text-align:left;cursor:pointer}
 .mob-menu a:last-child{border:none;color:#25D366}
 
 /* ── HERO ── */
@@ -263,6 +263,13 @@ body.has-promo .hero{padding-top:126px}
 
 /* ── PRODUCT CARDS ── */
 .prod-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.pagination{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:32px;flex-wrap:wrap}
+.pg-btn{min-width:36px;height:36px;padding:0 10px;border-radius:9px;border:1.5px solid var(--s3);background:#fff;color:var(--k2);font-size:.82rem;font-weight:700;cursor:pointer;transition:all var(--t)}
+.pg-btn:hover:not(:disabled){border-color:var(--r);color:var(--r)}
+.pg-btn.active{background:var(--r);border-color:var(--r);color:#fff}
+.pg-btn:disabled{opacity:.35;cursor:default}
+.pg-arrow{font-size:1rem;font-weight:800}
+.pg-ellipsis{color:var(--k3);padding:0 4px;font-size:.82rem}
 .pc{background:#fff;border:1px solid var(--s2);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:all var(--t);box-shadow:var(--sh);position:relative}
 .pc:hover{border-color:var(--r);box-shadow:var(--shrl)}
 .pc-img{aspect-ratio:3/4;overflow:hidden;background:var(--s1);position:relative}
@@ -744,8 +751,8 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{
     <a href="#faq">Preguntas frecuentes</a>
     <a href="#beneficios">Nosotros</a>
     <a href="#contacto">Contacto</a>
-    <button type="button" onclick="openShipping()" style="text-align:left;background:none;border:none;font:inherit;color:inherit;padding:0">🚚 Envíos</button>
-    <button type="button" onclick="openFavorites()" style="text-align:left;background:none;border:none;font:inherit;color:inherit;padding:0">❤ Favoritos <span id="navFavCountMob" style="display:none"></span></button>
+    <button type="button" onclick="openShipping()">🚚 Envíos</button>
+    <button type="button" onclick="openFavorites()">❤ Favoritos <span id="navFavCountMob" style="display:none"></span></button>
     <input type="text" placeholder="Buscar producto..." oninput="runSearch(this.value)" style="margin-top:6px;height:42px;border-radius:10px;border:1.5px solid var(--s3);padding:0 14px;font-size:.9rem;font-family:inherit"/>
     <a href="https://wa.me/573177810009?text=Hola%2C%20vi%20este%20producto%20en%20Bogot%C3%A1%20Bling%20y%20me%20gustar%C3%ADa%20recibir%20m%C3%A1s%20informaci%C3%B3n." target="_blank">Escribir por WhatsApp</a>
   </div>
@@ -804,6 +811,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{
       <p class="sec-sub">Las piezas más solicitadas de la colección. Calidad y lujo garantizados.</p>
     </div>
     <div class="prod-grid" id="g-destacados"></div>
+    <div class="pagination" id="pg-destacados"></div>
     <div class="grid-more">
       <a href="https://wa.me/573177810009?text=Hola%2C%20vi%20este%20producto%20en%20Bogot%C3%A1%20Bling%20y%20me%20gustar%C3%ADa%20recibir%20m%C3%A1s%20informaci%C3%B3n." target="_blank" class="btn btn-r" style="font-size:.9rem;padding:13px 28px">Ver todo el catálogo en WhatsApp</a>
     </div>
@@ -834,6 +842,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{
       <p class="sec-sub">Lo más nuevo de la colección. Sé el primero en tenerlo.</p>
     </div>
     <div class="prod-grid" id="g-novedades"></div>
+    <div class="pagination" id="pg-novedades"></div>
   </div>
 </section>
 
@@ -909,7 +918,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{
     <p style="font-size:.86rem;color:var(--k3);margin-top:6px">Valores de referencia — el costo final se confirma por WhatsApp según tu dirección exacta.</p>
     <table class="shipping-table">
       <thead><tr><th>Zona</th><th>Tiempo estimado</th><th>Costo aprox.</th></tr></thead>
-      <tbody>
+      <tbody id="shippingZonesBody">
         <tr><td>Bogotá</td><td>1–2 días hábiles</td><td>Consultar</td></tr>
         <tr><td>Ciudades principales</td><td>2–4 días hábiles</td><td>Consultar</td></tr>
         <tr><td>Otras zonas del país</td><td>3–6 días hábiles</td><td>Consultar</td></tr>
@@ -1266,7 +1275,24 @@ function sendCartWhatsApp(){
 }
 
 // ───────── ENVÍOS ─────────
-function openShipping(){ closeMega(); document.getElementById('shippingBg').classList.add('open'); }
+function openShipping(){ closeMega(); document.getElementById('shippingBg').classList.add('open'); loadShippingZones(); }
+async function loadShippingZones(){
+  const tbody = document.getElementById('shippingZonesBody');
+  if (!tbody || tbody.dataset.loaded) return; // ya se cargó una vez, no hace falta repetir
+  try {
+    const { data, error } = await sb.from('shipping_zones').select('*')
+      .order('position', { ascending: true }).order('created_at', { ascending: true });
+    if (error) throw error;
+    if (data && data.length){
+      tbody.innerHTML = data.map(z=>`<tr><td>${z.zone_name}</td><td>${z.eta_text||'—'}</td><td>${z.cost_text||'Consultar'}</td></tr>`).join('');
+    }
+    // si no hay zonas cargadas en el admin, se deja la tabla de referencia que ya trae el HTML
+    tbody.dataset.loaded = '1';
+  } catch (e) {
+    console.error('No se pudieron cargar las zonas de envío:', e);
+    // ante un error se deja la tabla de referencia tal cual estaba, para no romper el modal
+  }
+}
 function closeShipping(){ document.getElementById('shippingBg').classList.remove('open'); }
 
 // ───────── BUSCADOR (filtra las tarjetas ya renderizadas por nombre) ─────────
@@ -1286,11 +1312,14 @@ function closeNavSearch(){
 }
 function runSearch(term){
   term = (term||'').trim().toLowerCase();
-  // La primera vez que se busca, se fuerza el renderizado de todos los grids
-  // (algunos todavía no se pintaron por el scroll perezoso)
+  // Mientras hay una búsqueda activa se muestra la grilla completa (sin paginar), para
+  // poder encontrar coincidencias en todo el catálogo y no solo en la página actual.
   if (term && !searchForcedRender){
     searchForcedRender = true;
-    Object.keys(GR).forEach(gid=>{ if(GR[gid] && GR[gid].length) rGrid(GR[gid], gid); });
+    Object.keys(GR).forEach(gid=>{ if(GR[gid] && GR[gid].length) renderGridFull(gid); });
+  } else if (!term && searchForcedRender){
+    searchForcedRender = false;
+    Object.keys(GR).forEach(gid=>{ if(GR[gid] && GR[gid].length) renderGridPage(gid, 1); });
   }
   document.querySelectorAll('.pc').forEach(card=>{
     const name = card.querySelector('.pc-name');
@@ -1376,10 +1405,11 @@ function buildCategorySection(root, groups, eyebrow, altBg){
   section.id=root.slug;
   const soloRaiz = groups.length===1 && groups[0].id===root.id;
   const body = soloRaiz
-    ? `<div class="prod-grid" id="g-${groups[0].slug}"></div>`
+    ? `<div class="prod-grid" id="g-${groups[0].slug}"></div><div class="pagination" id="pg-${groups[0].slug}"></div>`
     : groups.map(g=>`<div class="subcat-block" id="${g.slug}">
         <h3 class="subcat-h3">${g.icon||''} ${g.name}</h3>
         <div class="prod-grid" id="g-${g.slug}"></div>
+        <div class="pagination" id="pg-${g.slug}"></div>
       </div>`).join('');
   section.innerHTML=`<div class="container">
     <div class="sec-head" style="margin-bottom:32px">
@@ -1600,16 +1630,12 @@ async function loadPromoBar(){
   document.body.classList.add('has-promo');
 }
 
-function rGrid(list,gid){
-  const g=document.getElementById(gid);
-  if(!g||g._r)return;g._r=true;
-  if(!list||!list.length){g.innerHTML='<p style="color:#999;text-align:center;padding:32px;grid-column:1/-1">No hay productos.</p>';return;}
-  g.innerHTML=list.map((p,i)=>{
-    let badge = p.nv ? '<span class="tag tag-new">Nuevo</span>' : p.ft ? '<span class="tag tag-g">Destacado</span>' : '';
-    if (p.so) badge = '<span class="tag tag-out">Agotado</span>';
-    else if (typeof p.stock === 'number' && p.stock > 0 && p.stock <= 2) badge += `<span class="tag tag-low">¡Últimas ${p.stock}!</span>`;
-    const waT=encodeURIComponent('Hola, vi este producto en Bogotá Bling y me gustaría recibir más información. Producto: '+p.n);
-    return`<article class="pc reveal${p.so?' is-out':''}" style="transition-delay:${i*32}ms" data-gid="${gid}" data-idx="${i}" onclick="OM('${gid}',${i})">
+function cardHTML(p, absIdx, gid, localIdx){
+  let badge = p.nv ? '<span class="tag tag-new">Nuevo</span>' : p.ft ? '<span class="tag tag-g">Destacado</span>' : '';
+  if (p.so) badge = '<span class="tag tag-out">Agotado</span>';
+  else if (typeof p.stock === 'number' && p.stock > 0 && p.stock <= 2) badge += `<span class="tag tag-low">¡Últimas ${p.stock}!</span>`;
+  const waT=encodeURIComponent('Hola, vi este producto en Bogotá Bling y me gustaría recibir más información. Producto: '+p.n);
+  return`<article class="pc reveal${p.so?' is-out':''}" style="transition-delay:${(localIdx??0)*32}ms" data-gid="${gid}" data-idx="${absIdx}" onclick="OM('${gid}',${absIdx})">
 <div class="pc-img"><img class="pc-img-a" src="${p.i}" alt="${p.n}" loading="lazy"/><div class="pc-tags">${badge}</div>
 <button class="pc-fav${isFav(p.s)?' active':''}" data-slug="${p.s}" onclick="event.stopPropagation();toggleFav('${p.s}')" aria-label="Favorito"><svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21.2l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg></button>
 <div class="pc-hover"><span>Ver detalles</span></div></div>
@@ -1619,11 +1645,84 @@ function rGrid(list,gid){
 <button class="pc-add${isInCart(p.s)?' added':''}" data-slug="${p.s}" onclick="event.stopPropagation();addToCart('${p.s}')" aria-label="Agregar al carrito"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></button>
 <button class="pc-btn" onclick="event.stopPropagation();window.open('https://wa.me/${WA}?text=${waT}','_blank')">${p.so?'Consultar':'Preguntar'}</button>
 </div></div></div></article>`;
-  }).join('');
-  g.querySelectorAll('.reveal').forEach(e=>RO.observe(e));
-  g.querySelectorAll('.pc').forEach(el=>{
-    attachTilt(el);
+}
+
+// ───────── Paginación de grillas ─────────
+const PAGE_SIZE = 12;
+let GP = {};              // página actual por grid: { gid: numeroDePagina }
+
+function pageNumbers(current, total){
+  const delta = 1, range = [];
+  for (let i = 1; i <= total; i++){
+    if (i === 1 || i === total || (i >= current-delta && i <= current+delta)) range.push(i);
+  }
+  const withDots = []; let prev = null;
+  range.forEach(i=>{
+    if (prev !== null && i - prev > 1) withDots.push('…');
+    withDots.push(i); prev = i;
   });
+  return withDots;
+}
+
+function renderPaginationControls(gid, page, totalPages){
+  const pg = document.getElementById('pg-'+gid.replace(/^g-/,''));
+  if (!pg) return;
+  if (totalPages <= 1){ pg.innerHTML=''; return; }
+  pg.innerHTML = `
+    <button class="pg-btn pg-arrow" ${page===1?'disabled':''} onclick="goToPage('${gid}',${page-1})" aria-label="Página anterior">‹</button>
+    ${pageNumbers(page,totalPages).map(n => n==='…' ? `<span class="pg-ellipsis">…</span>` : `<button class="pg-btn${n===page?' active':''}" onclick="goToPage('${gid}',${n})">${n}</button>`).join('')}
+    <button class="pg-btn pg-arrow" ${page===totalPages?'disabled':''} onclick="goToPage('${gid}',${page+1})" aria-label="Página siguiente">›</button>`;
+}
+
+function renderGridPage(gid, page){
+  const list = GR[gid] || [];
+  const g = document.getElementById(gid);
+  if (!g) return;
+  const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+  page = Math.min(Math.max(1, page), totalPages);
+  GP[gid] = page;
+  const start = (page-1)*PAGE_SIZE;
+  const pageItems = list.slice(start, start+PAGE_SIZE);
+
+  if (!list.length){
+    g.innerHTML = '<p style="color:#999;text-align:center;padding:32px;grid-column:1/-1">No hay productos.</p>';
+  } else {
+    g.innerHTML = pageItems.map((p,i)=>cardHTML(p, start+i, gid, i)).join('');
+    g.querySelectorAll('.reveal').forEach(e=>RO.observe(e));
+    g.querySelectorAll('.pc').forEach(el=>attachTilt(el));
+  }
+  renderPaginationControls(gid, page, totalPages);
+}
+
+function goToPage(gid, page){
+  renderGridPage(gid, page);
+  const el = document.getElementById(gid);
+  if (el) el.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+// Renderiza la grilla completa sin paginar (se usa mientras hay una búsqueda activa,
+// para poder encontrar coincidencias en todo el catálogo, no solo en la página actual)
+function renderGridFull(gid){
+  const list = GR[gid] || [];
+  const g = document.getElementById(gid);
+  if (!g) return;
+  g._r = true;
+  if (!list.length){
+    g.innerHTML = '<p style="color:#999;text-align:center;padding:32px;grid-column:1/-1">No hay productos.</p>';
+  } else {
+    g.innerHTML = list.map((p,i)=>cardHTML(p, i, gid, i%PAGE_SIZE)).join('');
+    g.querySelectorAll('.reveal').forEach(e=>RO.observe(e));
+    g.querySelectorAll('.pc').forEach(el=>attachTilt(el));
+  }
+  const pg = document.getElementById('pg-'+gid.replace(/^g-/,''));
+  if (pg) pg.innerHTML = '';
+}
+
+function initGridLazy(gid){
+  const g = document.getElementById(gid);
+  if (!g || g._r) return;
+  g._r = true;
+  renderGridPage(gid, 1);
 }
 
 function OM(gid,idx){CL2=GR[gid]||[];CI=idx;SM(CL2[idx]);}
@@ -1942,7 +2041,7 @@ document.addEventListener('keydown', e=>{ if (e.key === 'Escape'){ closeFaq(); c
 const SO=new IntersectionObserver(es=>{es.forEach(e=>{
   if(!e.isIntersecting)return;
   const gid=e.target.id;
-  if(GR[gid])rGrid(GR[gid],gid);
+  if(GR[gid])initGridLazy(gid);
   SO.unobserve(e.target);
 });},{rootMargin:'250px'});
 
