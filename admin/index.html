@@ -362,6 +362,7 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
           <button class="am-link" onclick="goToView('categories');toggleAdminMenu(false)">🗂 Categorías <span class="cnt" id="cntCategories"></span></button>
           <button class="am-link" onclick="openBulkModal();toggleAdminMenu(false)">📦 Subida masiva</button>
           <button class="am-link" onclick="openPromoBarModal();toggleAdminMenu(false)">🔥 Promoción</button>
+          <button class="am-link" onclick="openShippingModal();toggleAdminMenu(false)">🚚 Envíos</button>
         </div>
         <div class="am-section">
           <label class="am-label">Gestión</label>
@@ -564,6 +565,26 @@ select.status-select{background:var(--panel2);color:#fff;border:1px solid var(--
     <div class="modal-actions">
       <button class="btn btn-primary" onclick="savePromoBar()">Guardar</button>
       <button class="btn btn-outline" onclick="closeModal('promoBarModalBg')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="shippingModalBg">
+  <div class="modal modal-wide">
+    <button class="modal-close" onclick="closeModal('shippingModalBg')">✕</button>
+    <h3>🚚 Envíos</h3>
+    <p class="modal-sub">Estas zonas, tiempos y costos son los que ve el cliente al tocar "Envíos" en el sitio público.</p>
+
+    <div id="shippingZonesList" style="margin:14px 0"></div>
+
+    <div class="field-row">
+      <div class="field"><label>Zona</label><input id="szZone" type="text" placeholder="Ej: Medellín"/></div>
+      <div class="field"><label>Tiempo estimado</label><input id="szEta" type="text" placeholder="Ej: 2-3 días hábiles"/></div>
+    </div>
+    <div class="field"><label>Costo</label><input id="szCost" type="text" placeholder="Ej: $15.000, Gratis, o Consultar"/></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="shippingSaveBtn" onclick="saveShippingZone()">+ Agregar zona</button>
+      <button class="btn btn-outline" onclick="resetShippingForm()">Cancelar edición</button>
     </div>
   </div>
 </div>
@@ -826,7 +847,7 @@ function renderCategoryTree(){
         <div class="info"><div class="name">${sub.name}</div><div class="slug">${sub.slug}</div></div>
         <div class="acts">
           <button class="btn btn-ghost btn-xs" onclick='editCategory(${JSON.stringify(sub).replace(/'/g,"&apos;")})'>Editar</button>
-          <button class="btn btn-danger-ghost btn-xs" onclick="deleteCategory('${sub.id}')">Eliminar</button>
+          <button class="btn btn-danger-ghost btn-xs" onclick="deleteCategory('${sub.id}', this)" title="Eliminar categoría" aria-label="Eliminar categoría">✕</button>
         </div>
       </div>`).join('')
       : '<p class="tree-empty-hint">Sin subcategorías — <a href="#" onclick="openCategoryModal(\''+root.id+'\');return false" style="color:var(--gl)">agregar una</a></p>';
@@ -838,7 +859,7 @@ function renderCategoryTree(){
         <div class="acts" style="display:flex;gap:4px">
           <button class="btn btn-outline btn-xs" onclick="openCategoryModal('${root.id}')">+ Subcategoría</button>
           <button class="btn btn-ghost btn-xs" onclick='editCategory(${JSON.stringify(root).replace(/'/g,"&apos;")})'>Editar</button>
-          <button class="btn btn-danger-ghost btn-xs" onclick="deleteCategory('${root.id}')">Eliminar</button>
+          <button class="btn btn-danger-ghost btn-xs" onclick="deleteCategory('${root.id}', this)" title="Eliminar categoría" aria-label="Eliminar categoría">✕</button>
         </div>
       </div>
       <div class="tree-children">${kidsHtml}</div>
@@ -970,23 +991,50 @@ async function saveCategory(){
   loadCategories();
 }
 
-async function deleteCategory(id){
-  const hasChildren = categoriesCache.some(c=>c.parent_id===id);
-  if (hasChildren){ alert('Esta categoría tiene subcategorías. Elimina o mueve las subcategorías primero.'); return; }
+async function deleteCategory(id, btn){
+  const cat = categoriesCache.find(c => c.id === id);
+  const label = cat ? cat.name : 'esta categoría';
+  if (btn) btn.disabled = true;
 
-  const { count, error: countErr } = await sb.from('products')
-    .select('id', { count: 'exact', head: true })
-    .eq('category_id', id);
-  if (countErr) { alert('No se pudo verificar si la categoría tiene productos: ' + countErr.message); return; }
-  if (count && count > 0) {
-    alert(`Esta categoría tiene ${count} producto${count===1?'':'s'} asignado${count===1?'':'s'}. Mueve o reasigna esos productos a otra categoría antes de eliminarla.`);
-    return;
+  try {
+    // Se revisa en vivo contra Supabase (no contra la caché local en memoria), para blindar
+    // el borrado por si hay cambios recientes que la caché todavía no reflejó.
+    const { count: childCount, error: childErr } = await sb.from('categories')
+      .select('id', { count: 'exact', head: true })
+      .eq('parent_id', id);
+    if (childErr) { alert('No se pudo verificar si la categoría tiene subcategorías: ' + childErr.message); return; }
+    if (childCount && childCount > 0) {
+      alert(`"${label}" tiene ${childCount} subcategoría${childCount===1?'':'s'}. Elimina o mueve las subcategorías primero.`);
+      return;
+    }
+
+    const { count: prodCount, error: prodErr } = await sb.from('products')
+      .select('id', { count: 'exact', head: true })
+      .eq('category_id', id);
+    if (prodErr) { alert('No se pudo verificar si la categoría tiene productos: ' + prodErr.message); return; }
+    if (prodCount && prodCount > 0) {
+      alert(`"${label}" tiene ${prodCount} producto${prodCount===1?'':'s'} asignado${prodCount===1?'':'s'}. Mueve o reasigna esos productos a otra categoría antes de eliminarla.`);
+      return;
+    }
+
+    if (!confirm(`¿Eliminar la categoría "${label}"? Esta acción no se puede deshacer.`)) return;
+
+    // Se pide el count de filas afectadas: si Supabase no devuelve error pero tampoco borró
+    // ninguna fila (por ejemplo porque una política de seguridad lo bloqueó en silencio),
+    // nos enteramos igual en vez de decir "eliminado" sin haber pasado nada.
+    const { error, count } = await sb.from('categories').delete({ count: 'exact' }).eq('id', id);
+    if (error) { alert('Error al eliminar la categoría: ' + error.message); return; }
+    if (!count) {
+      alert('La categoría no se pudo eliminar (0 filas afectadas). Puede que ya no exista o que no tengas permiso — recargá la página e intentá de nuevo.');
+      return;
+    }
+
+    await loadCategories();
+  } catch (e) {
+    alert('Ocurrió un error inesperado al eliminar la categoría: ' + (e && e.message ? e.message : e));
+  } finally {
+    if (btn) btn.disabled = false;
   }
-
-  if (!confirm('¿Eliminar esta categoría?')) return;
-  const { error } = await sb.from('categories').delete().eq('id', id);
-  if (error) { alert('Error al eliminar la categoría: ' + error.message); return; }
-  loadCategories();
 }
 
 async function moveCategory(id, dir){
@@ -1981,6 +2029,96 @@ async function openPromoBarModal(){
   document.getElementById('promoBarDiscount').value = promo && promo.discount_percent ? promo.discount_percent : '';
   document.getElementById('promoBarEnds').value = promo && promo.ends_at ? promo.ends_at.slice(0, 10) : '';
   openModal('promoBarModalBg');
+}
+
+// ───────────── ZONAS DE ENVÍO ─────────────
+let shippingZonesCache = [];
+let editingShippingZoneId = null;
+
+async function openShippingModal(){
+  const { data, error } = await sb.from('shipping_zones').select('*')
+    .order('position', { ascending: true }).order('created_at', { ascending: true });
+  if (error) { alert('No se pudieron cargar las zonas de envío: ' + error.message); return; }
+  shippingZonesCache = data || [];
+  resetShippingForm();
+  renderShippingZones();
+  openModal('shippingModalBg');
+}
+
+function resetShippingForm(){
+  editingShippingZoneId = null;
+  document.getElementById('szZone').value = '';
+  document.getElementById('szEta').value = '';
+  document.getElementById('szCost').value = '';
+  document.getElementById('shippingSaveBtn').textContent = '+ Agregar zona';
+}
+
+function editShippingZone(z){
+  editingShippingZoneId = z.id;
+  document.getElementById('szZone').value = z.zone_name || '';
+  document.getElementById('szEta').value = z.eta_text || '';
+  document.getElementById('szCost').value = z.cost_text || '';
+  document.getElementById('shippingSaveBtn').textContent = 'Guardar cambios';
+}
+
+function renderShippingZones(){
+  const wrap = document.getElementById('shippingZonesList');
+  if (!shippingZonesCache.length){
+    wrap.innerHTML = '<p class="tree-empty-hint">Todavía no agregaste ninguna zona — el sitio muestra una tabla genérica hasta que agregues al menos una.</p>';
+    return;
+  }
+  wrap.innerHTML = shippingZonesCache.map(z=>`
+    <div class="tree-root-head" style="padding:10px 0">
+      <div class="info"><div class="name">${z.zone_name}</div><div class="slug">${z.eta_text||'Sin tiempo estimado'} · ${z.cost_text||'Consultar'}</div></div>
+      <div class="acts" style="display:flex;gap:4px">
+        <button class="btn btn-ghost btn-xs" onclick='editShippingZone(${JSON.stringify(z).replace(/'/g,"&apos;")})'>Editar</button>
+        <button class="btn btn-danger-ghost btn-xs" onclick="deleteShippingZone('${z.id}', this)" title="Eliminar zona" aria-label="Eliminar zona">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+async function saveShippingZone(){
+  const zone_name = document.getElementById('szZone').value.trim();
+  if (!zone_name) { alert('Escribí el nombre de la zona.'); return; }
+  const eta_text = document.getElementById('szEta').value.trim();
+  const cost_text = document.getElementById('szCost').value.trim();
+  const btn = document.getElementById('shippingSaveBtn');
+  btn.disabled = true;
+
+  try {
+    if (editingShippingZoneId) {
+      const { error } = await sb.from('shipping_zones')
+        .update({ zone_name, eta_text, cost_text }).eq('id', editingShippingZoneId);
+      if (error) { alert('Error al guardar: ' + error.message); return; }
+    } else {
+      const { error } = await sb.from('shipping_zones')
+        .insert({ zone_name, eta_text, cost_text, position: shippingZonesCache.length });
+      if (error) { alert('Error al guardar: ' + error.message); return; }
+    }
+    const { data, error: reErr } = await sb.from('shipping_zones').select('*')
+      .order('position', { ascending: true }).order('created_at', { ascending: true });
+    if (reErr) { alert('Se guardó, pero no se pudo refrescar la lista: ' + reErr.message); return; }
+    shippingZonesCache = data || [];
+    resetShippingForm();
+    renderShippingZones();
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function deleteShippingZone(id, btn){
+  if (!confirm('¿Eliminar esta zona de envío?')) return;
+  if (btn) btn.disabled = true;
+  try {
+    const { error, count } = await sb.from('shipping_zones').delete({ count: 'exact' }).eq('id', id);
+    if (error) { alert('Error al eliminar: ' + error.message); return; }
+    if (!count) { alert('No se pudo eliminar (0 filas afectadas). Recargá la página e intentá de nuevo.'); return; }
+    shippingZonesCache = shippingZonesCache.filter(z => z.id !== id);
+    if (editingShippingZoneId === id) resetShippingForm();
+    renderShippingZones();
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 
 async function savePromoBar(){
