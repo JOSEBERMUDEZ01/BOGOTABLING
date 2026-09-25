@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /admin/
 
-Sitemap: https://bogotabling.vercel.app/sitemap.xml
+Sitemap: https://martineztimeco.vercel.app/sitemap.xml
